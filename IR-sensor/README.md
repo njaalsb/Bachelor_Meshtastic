@@ -1,9 +1,9 @@
-FLIR Lepton 3.1R
+# FLIR Lepton 3.1R
 - Video overføres over SPI
 - Bilde over I2C?
 - Oppløsning 160 x 120 pixler 
 
-PINOUT-breakout board
+### PINOUT-breakout board
 
 Pin 1 - SCL: Camera Control Interface Clock, I2C
 Pin 2 - SDA: Camera Control Interface Data, I2C
@@ -16,9 +16,9 @@ Pin 8 - CS: Video Over SPI Slave Chip Select (active LOW)
 Pin 9 - VSYNC: VSync
 Pin 10 - EN: Enable, Active High
 
-Eksempelkode:
+### Eksempelkode:
 https://github.com/groupgets/LeptonModule/blob/master/software/arduino_i2c/Lepton.ino
 https://www.youtube.com/watch?v=NLrTN8MurZw
 
-Firmware:
+### Firmware:
 https://github.com/meshtastic/firmware/tree/develop/variants/esp32s3
