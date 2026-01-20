@@ -18,3 +18,7 @@ Pin 10 - EN: Enable, Active High
 
 Eksempelkode:
 https://github.com/groupgets/LeptonModule/blob/master/software/arduino_i2c/Lepton.ino
+https://www.youtube.com/watch?v=NLrTN8MurZw
+
+Firmware:
+https://github.com/meshtastic/firmware/tree/develop/variants/esp32s3
