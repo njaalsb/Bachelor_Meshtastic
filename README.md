@@ -2,7 +2,7 @@
 
 ## Nyttig informasjon:
 
-Når man ønsker å flashe Lilygo T3S3, vil firmwaren whipes fra flash-minnet. Dersom man ønsker å gå tilbake til original firmware, kan man gjøre det via følgende link:
+Dersom man flasher en meshtastic enhet vil firmwaren whipes fra flash-minnet. For å gå tilbake til original firmware, følg linken:
 
 - https://flasher.meshtastic.org/
 
