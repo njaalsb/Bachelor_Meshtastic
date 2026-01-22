@@ -3,7 +3,7 @@
 - Bilde over I2C?
 - Oppløsning 160 x 120 pixler 
 
-### PINOUT-breakout board
+### PINOUT-FLIR Lepton 3.1R
 
 Pin 1 - SCL: Camera Control Interface Clock, I2C
 Pin 2 - SDA: Camera Control Interface Data, I2C
@@ -22,3 +22,13 @@ https://www.youtube.com/watch?v=NLrTN8MurZw
 
 ### Firmware:
 https://github.com/meshtastic/firmware/tree/develop/variants/esp32s3
+
+## PureThermal Breakout Board:
+
+Docs: https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/694/250-0577-00_DS_1-2021.pdf
+
+### Pinout
+
+![alt text](image.png)
+
+![alt text](image-1.png)
