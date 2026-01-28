@@ -1,6 +1,7 @@
 # FLIR Lepton 3.1R
-- Video overføres over SPI
-- Bilde over I2C?
+- Infrarød bildesensor
+- Kameraet styres over I2C
+- Bildet overføres via SPI
 - Oppløsning 160 x 120 pixler 
 
 ### PINOUT-FLIR Lepton 3.1R
@@ -27,7 +28,7 @@ https://github.com/meshtastic/firmware/tree/develop/variants/esp32s3
 
 Docs: https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/694/250-0577-00_DS_1-2021.pdf
 
-### Pinout
+### Pinout breakout board
 
 ![alt text](image.png)
 

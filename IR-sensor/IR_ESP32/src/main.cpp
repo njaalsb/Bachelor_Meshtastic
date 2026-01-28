@@ -1,7 +1,12 @@
+/* Denne koden er ment for å teste FLIR lepton IR kameraet ved bruk av en ESP32. Det er tatt utgangspunkt i en eksempelkode
+ * som det er linket til i readme. Eksempelkoden er skrevet i Arduino C, men dette er blitt endret til C++. 
+ * I2C addressen til kameraet er: 0x2A
+ */ 
+
 #include <Wire.h>
 #include <SPI.h>
 
-// ESP32 Pin Definitions
+// ESP32 Pin deklarasjoner
 #define SPI_MOSI    23
 #define SPI_MISO    19
 #define SPI_SCK     18
@@ -13,6 +18,7 @@
 byte x = 0;
 #define ADDRESS  (0x2A)
 
+/*
 void i2c_scanner() {
   byte error, address;
   int nDevices;
@@ -38,6 +44,7 @@ void i2c_scanner() {
   else
     Serial.println("I2C scan complete\n");
 }
+*/
 
 #define AGC (0x01)
 #define SYS (0x02)
@@ -52,31 +59,30 @@ void i2c_scanner() {
 
 void setup()
 {
-  // Initialize Serial first
   Serial.begin(115200);
-  delay(1000);
+  delay(500);
   Serial.println("\n\nStarting Lepton IR Camera...");
 
-  // Initialize Reset pin and reset the camera
+  // Initialiserer Reset pin og reseter kameraet
   pinMode(RESET_PIN, OUTPUT);
-  digitalWrite(RESET_PIN, LOW);   // Hold in reset
+  digitalWrite(RESET_PIN, LOW);   
   delay(100);
-  digitalWrite(RESET_PIN, HIGH);  // Release reset
+  digitalWrite(RESET_PIN, HIGH);  
   Serial.println("Camera reset complete");
   
-  // Wait for camera boot (Lepton needs ~950ms)
+  // Venter til kameraet booter (Lepton trenger ~950ms)
   Serial.println("Waiting for camera boot...");
   delay(2000);
   
-  // Initialize I2C with 100kHz clock (Lepton prefers slower speeds)
+  // Initialiserer I2C med 100kHz klokke (Lepton foretrekker angivelig litt lavere hastighet)
   Wire.begin(I2C_SDA, I2C_SCL);
   Wire.setClock(100000);  // 100 kHz I2C clock
   Serial.println("I2C initialized at 100kHz");
   
   // Scan I2C bus to verify camera presence
-  i2c_scanner();
+  //i2c_scanner();
   
-  // Initialize SPI CS pin
+  // Initialiserer chipselect pinnen for SPI 
   pinMode(SPI_CS, OUTPUT);
   digitalWrite(SPI_CS, HIGH);
   
