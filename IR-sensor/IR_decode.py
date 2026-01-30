@@ -8,8 +8,8 @@ import os
 
 # Configuration
 rel_path = r'IR-sensor\IR_output.txt'
-IMAGE_WIDTH = 12  # Width of thermal image
-IMAGE_HEIGHT = 8  # Height of thermal image
+IMAGE_WIDTH = 80  # Width of thermal image
+IMAGE_HEIGHT = 60  # Height of thermal image
 
 
 def parse_ir_data(file_path):

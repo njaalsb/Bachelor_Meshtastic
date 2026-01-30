@@ -2,7 +2,7 @@
 - Infrarød bildesensor
 - Kameraet styres over I2C
 - Bildet overføres via SPI
-- Oppløsning 160 x 120 pixler 
+- Oppløsning 160 x 120 pixler
 
 ### PINOUT-FLIR Lepton 3.1R
 

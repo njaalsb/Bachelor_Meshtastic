@@ -3,6 +3,17 @@
  * I2C addressen til kameraet er: 0x2A
  */ 
 
+ /* 
+  * Kamera specs: Lepton 3/3.5
+  * Image size: 160 x 120 = 19,200 pixels
+  * RGB888 mode: 3 bytes per pixel = 57,600 bytes per frame
+  * VoSPI Structure:
+  *   - 4 segments per frame
+  *   - 60 packets per segment
+  *   - 240 total packets per frame
+  *   - Each packet: 4 byte header + 160 byte payload = 164 bytes
+  */
+
 #include <Wire.h>
 #include <SPI.h>
 
@@ -14,6 +25,16 @@
 #define I2C_SDA     21
 #define I2C_SCL     22
 #define RESET_PIN   4  // Optional reset pin
+
+// Lepton 3 VoSPI Constants
+#define VOSPI_PACKET_SIZE 164
+#define PACKETS_PER_SEGMENT 60
+#define SEGMENTS_PER_FRAME 4
+#define PACKETS_PER_FRAME (PACKETS_PER_SEGMENT * SEGMENTS_PER_FRAME)  // 240
+#define IMAGE_WIDTH 160
+#define IMAGE_HEIGHT 120
+#define RGB_BYTES_PER_PIXEL 3
+#define IMAGE_BUFFER_SIZE (IMAGE_WIDTH * IMAGE_HEIGHT * RGB_BYTES_PER_PIXEL)  // 57,600 bytes
 
 byte x = 0;
 #define ADDRESS  (0x2A)
@@ -55,7 +76,11 @@ void i2c_scanner() {
 #define SET (0x01)
 #define RUN (0x02)
 
-#define VOSPI_FRAME_SIZE (164)
+// Single packet buffer
+byte packet_buffer[VOSPI_PACKET_SIZE];
+
+// Full RGB888 image buffer (Warning: 57,600 bytes - might be tight on ESP32)
+uint8_t rgb_image[IMAGE_BUFFER_SIZE];
 
 void setup()
 {
@@ -76,8 +101,8 @@ void setup()
   
   // Initialiserer I2C med 100kHz klokke (Lepton foretrekker angivelig litt lavere hastighet)
   Wire.begin(I2C_SDA, I2C_SCL);
-  Wire.setClock(100000);  // 100 kHz I2C clock
-  Serial.println("I2C initialized at 100kHz");
+  Wire.setClock(100000);  // 100 kHz I2C klokke
+  Serial.println("I2C initialisert med frekvens på 100kHz");
   
   // Scan I2C bus to verify camera presence
   //i2c_scanner();
@@ -86,49 +111,131 @@ void setup()
   pinMode(SPI_CS, OUTPUT);
   digitalWrite(SPI_CS, HIGH);
   
-  // Initialize SPI with ESP32 pins
+  // Initialiserer SPI med ESP32 pins
   SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI, SPI_CS);
   SPI.setDataMode(SPI_MODE3);
-  SPI.setFrequency(20000000);  // 20 MHz SPI clock
+  SPI.setFrequency(20000000);  // 20 MHz SPI klokke
 
-  Serial.println("Setup complete\n");
+  Serial.println("Setup fullfort\n");
 }
 
 int spi_read_word(int data)
 {
   int read_data;
-  // take the SS pin low to select the chip:
+  // Setter CS pinnen lav for å velge chip
   digitalWrite(SPI_CS, LOW);
-  //  send in the address and value via SPI:
+  //  sender addresse og verdi via SPI
   read_data = SPI.transfer(data >> 8) << 8;
   read_data |= SPI.transfer(data);
-  // take the SS pin high to de-select the chip:
+  // Setter CS høy for å slutte å lese data:
   digitalWrite(SPI_CS, HIGH);
   return read_data;
 }
 
-byte lepton_frame_packet[VOSPI_FRAME_SIZE];
+// Lagrer frame pakken i typen byte 
+byte lepton_frame_packet[VOSPI_PACKET_SIZE];
 
-#define IMAGE_SIZE (800)
-byte image[IMAGE_SIZE];
-int image_index;
-void read_lepton_frame(void)
+// Read a single VoSPI packet (164 bytes)
+bool read_vospi_packet(byte* packet)
 {
-  int i;
-  // Keep CS low for entire frame read
   digitalWrite(SPI_CS, LOW);
-  delayMicroseconds(10);  // Small delay for camera to prepare
+  delayMicroseconds(10);
   
-  for (i = 0; i < VOSPI_FRAME_SIZE; i++)
+  for (int i = 0; i < VOSPI_PACKET_SIZE; i++)
   {
-    lepton_frame_packet[i] = SPI.transfer(0x00);
+    packet[i] = SPI.transfer(0x00);
   }
   
-  // Release CS after frame is complete
   digitalWrite(SPI_CS, HIGH);
-  delayMicroseconds(185);  // Inter-frame delay
+  delayMicroseconds(10);
+  
+  // Check if this is a discard packet (ID bits all set)
+  uint16_t packet_id = (packet[0] << 8) | packet[1];
+  return (packet_id & 0x0F00) != 0x0F00;  // Returns false if discard packet
 }
 
+// Capture complete Lepton 3 frame (4 segments, 240 packets)
+bool capture_lepton3_frame()
+{
+  int packets_received = 0;
+  int segment = 0;
+  int packet_in_segment = 0;
+  int image_offset = 0;
+  
+  // Wait for segment 1 to start (segment 0 indicates start of frame)
+  bool synced = false;
+  int sync_attempts = 0;
+  
+  while (!synced && sync_attempts < 750)
+  {
+    if (read_vospi_packet(packet_buffer))
+    {
+      uint16_t packet_header = (packet_buffer[0] << 8) | packet_buffer[1];
+      int packet_num = packet_header & 0x0FFF;
+      int packet_segment = (packet_header >> 12) & 0x7;
+      
+      // Look for packet 0 or packet 20 in segment 1 (start of valid data)
+      if (packet_segment == 1 && (packet_num == 0 || packet_num == 20))
+      {
+        synced = true;
+        segment = 1;
+        packet_in_segment = packet_num;
+        
+        // Copy this first packet's data (skip 4-byte header)
+        for (int i = 0; i < 160; i++)
+        {
+          rgb_image[image_offset++] = packet_buffer[i + 4];
+        }
+        packets_received = 1;
+      }
+    }
+    sync_attempts++;
+    yield();
+  }
+  
+  if (!synced)
+  {
+    Serial.println("Failed to sync with frame start");
+    return false;
+  }
+  
+  // Now read the rest of the frame
+  while (packets_received < PACKETS_PER_FRAME && sync_attempts < 1000)
+  {
+    if (read_vospi_packet(packet_buffer))
+    {
+      uint16_t packet_header = (packet_buffer[0] << 8) | packet_buffer[1];
+      int packet_num = packet_header & 0x0FFF;
+      int packet_segment = (packet_header >> 12) & 0x7;
+      
+      // Verify sequential packet
+      if (packet_segment >= 1 && packet_segment <= 4)
+      {
+        // Copy RGB data (skip 4-byte header)
+        if (image_offset + 160 <= IMAGE_BUFFER_SIZE)
+        {
+          for (int i = 0; i < 160; i++)
+          {
+            rgb_image[image_offset++] = packet_buffer[i + 4];
+          }
+          packets_received++;
+        }
+      }
+    }
+    sync_attempts++;
+    yield();
+  }
+  
+  Serial.print("Captured ");
+  Serial.print(packets_received);
+  Serial.print(" packets, ");
+  Serial.print(image_offset);
+  Serial.println(" bytes");
+  
+  return (packets_received >= 200);  // Accept if we got most of the frame
+}
+
+// Sync funksjon
 void lepton_sync(void)
 {
   int i;
@@ -156,25 +263,93 @@ void lepton_sync(void)
 void print_lepton_frame(void)
 {
   int i;
-  for (i = 0; i < (VOSPI_FRAME_SIZE); i++)
+  for (i = 0; i < (VOSPI_PACKET_SIZE); i++)
   {
     Serial.print(lepton_frame_packet[i], HEX);
     Serial.print(",");
-
   }
   Serial.println(" ");
 }
 
-void print_image(void)
+// Output RGB888 image in PPM format (can be saved and viewed)
+void print_rgb_image_ppm()
 {
-  int i;
-  for (i = 0; i < (IMAGE_SIZE); i++)
-  {
-    Serial.print(image[i], HEX);
-    Serial.print(",");
+  // PPM P6 format header
+  Serial.println("P6");
+  Serial.print(IMAGE_WIDTH);
+  Serial.print(" ");
+  Serial.println(IMAGE_HEIGHT);
+  Serial.println("255");
+  
+  // Binary RGB data
+  Serial.write(rgb_image, IMAGE_BUFFER_SIZE);
+  Serial.println();
+}
 
+// Output RGB image as CSV (row,col,R,G,B) - useful for debugging
+void print_rgb_image_csv()
+{
+  Serial.println("row,col,R,G,B");
+  int pixel = 0;
+  for (int row = 0; row < IMAGE_HEIGHT; row++)
+  {
+    for (int col = 0; col < IMAGE_WIDTH; col++)
+    {
+      int index = pixel * 3;
+      Serial.print(row);
+      Serial.print(",");
+      Serial.print(col);
+      Serial.print(",");
+      Serial.print(rgb_image[index]);     // R
+      Serial.print(",");
+      Serial.print(rgb_image[index + 1]); // G
+      Serial.print(",");
+      Serial.println(rgb_image[index + 2]); // B
+      pixel++;
+    }
   }
-  Serial.println(" ");
+}
+
+// Output basic image statistics
+void print_image_stats()
+{
+  uint32_t r_sum = 0, g_sum = 0, b_sum = 0;
+  uint8_t r_min = 255, g_min = 255, b_min = 255;
+  uint8_t r_max = 0, g_max = 0, b_max = 0;
+  
+  for (int i = 0; i < IMAGE_BUFFER_SIZE; i += 3)
+  {
+    uint8_t r = rgb_image[i];
+    uint8_t g = rgb_image[i + 1];
+    uint8_t b = rgb_image[i + 2];
+    
+    r_sum += r; g_sum += g; b_sum += b;
+    if (r < r_min) r_min = r; if (r > r_max) r_max = r;
+    if (g < g_min) g_min = g; if (g > g_max) g_max = g;
+    if (b < b_min) b_min = b; if (b > b_max) b_max = b;
+  }
+  
+  int total_pixels = IMAGE_WIDTH * IMAGE_HEIGHT;
+  Serial.print("R: avg=");
+  Serial.print(r_sum / total_pixels);
+  Serial.print(" min=");
+  Serial.print(r_min);
+  Serial.print(" max=");
+  Serial.println(r_max);
+  
+  Serial.print("G: avg=");
+  Serial.print(g_sum / total_pixels);
+  Serial.print(" min=");
+  Serial.print(g_min);
+  Serial.print(" max=");
+  Serial.println(g_max);
+  
+  Serial.print("B: avg=");
+  Serial.print(b_sum / total_pixels);
+  Serial.print(" min=");
+  Serial.print(b_min);
+  Serial.print(" max=");
+  Serial.println(b_max);
 }
 
 void lepton_command(unsigned int moduleID, unsigned int commandID, unsigned int command)
@@ -207,18 +382,48 @@ void lepton_command(unsigned int moduleID, unsigned int commandID, unsigned int 
 void agc_enable()
 {
   byte error;
-  Wire.beginTransmission(ADDRESS); // transmit to device #4
+  Wire.beginTransmission(ADDRESS);
   Wire.write(0x01);
   Wire.write(0x05);
   Wire.write(0x00);
   Wire.write(0x01);
 
-  error = Wire.endTransmission();    // stop transmitting
+  error = Wire.endTransmission();
   if (error != 0)
   {
-    Serial.print("error=");
+    Serial.print("AGC enable error=");
     Serial.println(error);
   }
+}
+
+// Enable RGB888 output format
+void enable_rgb888_mode()
+{
+  Serial.println("Configuring RGB888 output mode...");
+  
+  // VID Output Format - Set to RGB888 (command ID 0x30, value 0x03 for RGB888)
+  lepton_command(VID, 0x30 >> 2, SET);
+  
+  delay(100);
+  
+  // Write the RGB888 mode value (0x00000003)
+  Wire.beginTransmission(ADDRESS);
+  Wire.write(0x00);  // Data register high byte
+  Wire.write(0xF8);  // Data register low byte (0x00F8)
+  Wire.write(0x00);
+  Wire.write(0x00);
+  Wire.write(0x00);
+  Wire.write(0x03);  // RGB888 mode = 3
+  
+  byte error = Wire.endTransmission();
+  if (error != 0)
+  {
+    Serial.print("RGB888 config error=");
+    Serial.println(error);
+  }
+  
+  delay(500);  // Wait for camera to reconfigure
+  Serial.println("RGB888 mode enabled");
 }
 
 void set_reg(unsigned int reg)
@@ -342,39 +547,51 @@ void loop()
   read_data();
 
   Serial.println("AGC Enable");
-  //lepton_command(AGC, 0x01  , SET);
   agc_enable();
   read_data();
 
   Serial.println("AGC READ");
-  lepton_command(AGC, 0x00  , GET);
+  lepton_command(AGC, 0x00, GET);
   read_data();
 
-  // Serial.println("SYS Telemetry Enable State");
-  //lepton_command(SYS, 0x19>>2 ,GET);
-  // read_data();
+  // Enable RGB888 output mode
+  enable_rgb888_mode();
 
-  Serial.println("\n=== Starting continuous frame capture ===\n");
+  Serial.println("\n=== Starting RGB888 frame capture (160x120) ===\n");
+  Serial.println("Capturing thermal images in 24-bit RGB color...\n");
   
-  // Read and display thermal frames continuously
   int frame_count = 0;
+  int successful_frames = 0;
+  
   while (1)
   {
-    read_lepton_frame();
-    
-    // Print every 30th frame to avoid flooding serial
-    if (frame_count % 30 == 0) {
-      Serial.print("Frame ");
-      Serial.print(frame_count);
-      Serial.println(":");
-      print_lepton_frame();
+    // Capture complete RGB frame
+    if (capture_lepton3_frame())
+    {
+      successful_frames++;
+      
+      // Every 10th successful frame, output statistics
+      if (successful_frames % 10 == 0)
+      {
+        Serial.print("\n=== Frame ");
+        Serial.print(successful_frames);
+        Serial.println(" ===");
+        print_image_stats();
+        
+        // Uncomment one of these to output full image:
+        // print_rgb_image_ppm();  // PPM format - can save to .ppm file
+        // print_rgb_image_csv();  // CSV format - easier to parse/debug
+      }
+    }
+    else
+    {
+      Serial.println("Frame capture failed, resyncing...");
+      delay(200);  // Wait before retrying
     }
     
     frame_count++;
-    
-    // CRITICAL: Yield to watchdog timer to prevent crash
     yield();
-    delay(1);  // Small delay between frames
+    delay(100);  // ~10 fps
   }
 
   x++;
