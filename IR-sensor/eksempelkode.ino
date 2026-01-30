@@ -1,43 +1,34 @@
+/*
+Copyright (c) 2014, Pure Engineering LLC
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #include <Wire.h>
 #include <SPI.h>
 
-// ESP32 Pin Definitions
-#define SPI_MOSI    23
-#define SPI_MISO    19
-#define SPI_SCK     18
-#define SPI_CS      5
-#define I2C_SDA     21
-#define I2C_SCL     22
-#define RESET_PIN   4  // Optional reset pin
-
 byte x = 0;
 #define ADDRESS  (0x2A)
-
-void i2c_scanner() {
-  byte error, address;
-  int nDevices;
-  Serial.println("Scanning I2C bus...");
-  nDevices = 0;
-  for(address = 1; address < 127; address++ ) {
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
-    if (error == 0) {
-      Serial.print("I2C device found at address 0x");
-      if (address<16) Serial.print("0");
-      Serial.println(address,HEX);
-      nDevices++;
-    }
-    else if (error==4) {
-      Serial.print("Unknown error at address 0x");
-      if (address<16) Serial.print("0");
-      Serial.println(address,HEX);
-    }
-  }
-  if (nDevices == 0)
-    Serial.println("No I2C devices found\n");
-  else
-    Serial.println("I2C scan complete\n");
-}
 
 #define AGC (0x01)
 #define SYS (0x02)
@@ -52,52 +43,31 @@ void i2c_scanner() {
 
 void setup()
 {
-  // Initialize Serial first
+  //pinMode(pin, INPUT);           // set pin to input
+  //digitalWrite(pin, HIGH);
+
+  Wire.begin();
   Serial.begin(115200);
-  delay(1000);
-  Serial.println("\n\nStarting Lepton IR Camera...");
 
-  // Initialize Reset pin and reset the camera
-  pinMode(RESET_PIN, OUTPUT);
-  digitalWrite(RESET_PIN, LOW);   // Hold in reset
-  delay(100);
-  digitalWrite(RESET_PIN, HIGH);  // Release reset
-  Serial.println("Camera reset complete");
-  
-  // Wait for camera boot (Lepton needs ~950ms)
-  Serial.println("Waiting for camera boot...");
-  delay(2000);
-  
-  // Initialize I2C with 100kHz clock (Lepton prefers slower speeds)
-  Wire.begin(I2C_SDA, I2C_SCL);
-  Wire.setClock(100000);  // 100 kHz I2C clock
-  Serial.println("I2C initialized at 100kHz");
-  
-  // Scan I2C bus to verify camera presence
-  i2c_scanner();
-  
-  // Initialize SPI CS pin
-  pinMode(SPI_CS, OUTPUT);
-  digitalWrite(SPI_CS, HIGH);
-  
-  // Initialize SPI with ESP32 pins
-  SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI, SPI_CS);
+  pinMode(10, OUTPUT);
   SPI.setDataMode(SPI_MODE3);
-  SPI.setFrequency(20000000);  // 20 MHz SPI clock
+  SPI.setClockDivider(0);
 
-  Serial.println("Setup complete\n");
+  SPI.begin();
+
+  Serial.println("setup complete");
 }
 
 int spi_read_word(int data)
 {
   int read_data;
   // take the SS pin low to select the chip:
-  digitalWrite(SPI_CS, LOW);
+  digitalWrite(10, LOW);
   //  send in the address and value via SPI:
   read_data = SPI.transfer(data >> 8) << 8;
   read_data |= SPI.transfer(data);
   // take the SS pin high to de-select the chip:
-  digitalWrite(SPI_CS, HIGH);
+  digitalWrite(10, HIGH);
   return read_data;
 }
 
@@ -109,18 +79,19 @@ int image_index;
 void read_lepton_frame(void)
 {
   int i;
-  // Keep CS low for entire frame read
-  digitalWrite(SPI_CS, LOW);
-  delayMicroseconds(10);  // Small delay for camera to prepare
-  
-  for (i = 0; i < VOSPI_FRAME_SIZE; i++)
+  for (i = 0; i < (VOSPI_FRAME_SIZE / 2); i++)
   {
-    lepton_frame_packet[i] = SPI.transfer(0x00);
+    //digitalWrite(10, LOW);
+    PORTB &= ~(1 << 2);
+    //  send in the address and value via SPI:
+    lepton_frame_packet[2 * i] = SPI.transfer(0x00);
+    lepton_frame_packet[2 * i + 1] = SPI.transfer(0x00);
+
+
+    // take the SS pin high to de-select the chip:
+    //digitalWrite(10, HIGH);
+    PORTB |= 1 << 2;
   }
-  
-  // Release CS after frame is complete
-  digitalWrite(SPI_CS, HIGH);
-  delayMicroseconds(185);  // Inter-frame delay
 }
 
 void lepton_sync(void)
@@ -128,23 +99,27 @@ void lepton_sync(void)
   int i;
   int data = 0x0f;
 
-  digitalWrite(SPI_CS, HIGH);
+  PORTB |= 1 << 2;
   delay(185);
-  while ((data & 0x0f) == 0x0f)
-  {
-    digitalWrite(SPI_CS, LOW);
+  while (data & 0x0f == 0x0f)
+{
+  PORTB &= ~(1 << 2);
     data = SPI.transfer(0x00) << 8;
     data |= SPI.transfer(0x00);
-    digitalWrite(SPI_CS, HIGH);
+    PORTB |= 1 << 2;
 
     for (i = 0; i < ((VOSPI_FRAME_SIZE - 2) / 2); i++)
     {
-      digitalWrite(SPI_CS, LOW);
+
+      PORTB &= ~(1 << 2);
+
       SPI.transfer(0x00);
       SPI.transfer(0x00);
-      digitalWrite(SPI_CS, HIGH);
+
+      PORTB |= 1 << 2;
     }
   }
+
 }
 
 void print_lepton_frame(void)
@@ -268,22 +243,15 @@ int read_data()
   Serial.print("payload_length=");
   Serial.println(payload_length);
 
-  Wire.requestFrom(ADDRESS, (uint8_t)payload_length);
-  
-  // Wait for data to arrive
-  delay(10);
-  
-  // Only read the bytes that are actually available
-  int available = Wire.available();
-  for (i = 0; i < (available / 2); i++)
+  Wire.requestFrom(ADDRESS, payload_length);
+  //set_reg(0x08);
+  for (i = 0; i < (payload_length / 2); i++)
   {
-    if (Wire.available() >= 2) {
-      data = Wire.read() << 8;
-      data |= Wire.read();
-      Serial.println(data, HEX);
-    }
+    data = Wire.read() << 8;
+    data |= Wire.read();
+    Serial.println(data, HEX);
   }
-  Serial.println();  // Add blank line for readability
+
 }
 
 
@@ -346,28 +314,18 @@ void loop()
   //lepton_command(SYS, 0x19>>2 ,GET);
   // read_data();
 
-  Serial.println("\n=== Starting continuous frame capture ===\n");
-  
-  // Read and display thermal frames continuously
-  int frame_count = 0;
   while (1)
   {
+    //lepton_sync();
     read_lepton_frame();
-    
-    // Print every 30th frame to avoid flooding serial
-    if (frame_count % 30 == 0) {
-      Serial.print("Frame ");
-      Serial.print(frame_count);
-      Serial.println(":");
-      print_lepton_frame();
+    //if(lepton_frame_packet[i]&0x0f != 0x0f )
+    {
+      //print_lepton_frame();
     }
-    
-    frame_count++;
-    
-    // CRITICAL: Yield to watchdog timer to prevent crash
-    yield();
-    delay(1);  // Small delay between frames
+
   }
+
+
 
   x++;
   delay(10000);
