@@ -8,7 +8,7 @@ For å laste ned:
 pip3 install --upgrade "meshtastic[cli]"
 ```
 
-### Kommandoer:
+## Kommandoer:
 
 ```bash
 meshtastic --port COM16 --info
