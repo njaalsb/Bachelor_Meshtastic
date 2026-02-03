@@ -45,3 +45,9 @@ Kjør så følgende linje for å laste opp den nye konfigurasjonen:
 meshtastic --configure example_config.yaml
 ```
 
+
+
+
+
+
+<img width="800" height="534" alt="image" src="https://github.com/user-attachments/assets/3f737d81-d93f-40ef-8351-79775f0d70ed" />
