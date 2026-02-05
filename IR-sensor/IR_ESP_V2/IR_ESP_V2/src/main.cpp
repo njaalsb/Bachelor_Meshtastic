@@ -5,6 +5,7 @@
 IR cam;
 
 void setup() {
+  pinMode(RESET_PIN, OUTPUT);
   Serial.begin(115200);
   cam.I2C_connect();
 }
@@ -18,13 +19,6 @@ void loop() {
   Serial.print("Status: ");
   Serial.println(var);
 
-
-  if(var != 0){
-    while(true){
-      Serial.println(var);
-      delay(100);
-    }
-  }
-  //Serial.print("Powerstatus:");
-  //Serial.println(cam.read_power());
+  Serial.print("Powerstatus:");
+  Serial.println(cam.read_power());
 }
