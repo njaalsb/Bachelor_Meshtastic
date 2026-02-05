@@ -1,7 +1,5 @@
 #include "IR.h"
 
-
-
 void IR::I2C_connect(void){
     uint16_t status;
 
@@ -27,8 +25,9 @@ void IR::I2C_connect(void){
 
 int IR::read_stat(){  
     int reg = 0x2;
-    int stat = 69;
+    int stat = 0;
     byte error;
+
     // Velger hvilket register vi ønsker å hente data fra
     Wire.beginTransmission(ADDRESSE);
 
@@ -58,9 +57,11 @@ int IR::read_stat(){
 }
 
 int IR::read_power(){
-    Wire.beginTransmission(ADDRESSE);
+    
     int stat = 0;
     int reg = 0x0;
+
+    Wire.beginTransmission(ADDRESSE);
 
     Wire.write(reg >> 8 & 0xff);
     Wire.write(reg & 0xff);
@@ -98,4 +99,43 @@ void IR::boot(void){
     delay(5000);
 
     Serial.println("Reset fullført");
+}
+
+bool IR::busy_bit(){
+    // sjekk bit 0 i status reg for å avgjøre om interface er busy
+    std::vector<int> resultat;
+    int reg = 0x02;
+    char availability;
+    int state;
+
+    Wire.beginTransmission(ADDRESSE);
+
+    Wire.write(reg >> 8 & 0xff);
+    Wire.write(reg & 0xff);            // sends one byte
+
+    Wire.endTransmission();
+
+    Wire.requestFrom(ADDRESSE, 2);
+
+    if(Wire.available() >= 2){
+        state = Wire.read() << 8;  // High byte
+        state = Wire.read();       // Low byte
+    }
+
+    resultat = IR::int_to_byte(state);
+    return resultat[0];
+}
+
+std::vector<int> IR::int_to_byte(int input){
+    char availability;
+    availability = static_cast<char>(input);
+
+    std::vector<int> vec;
+
+    for(int i = 0; i < 8; i++){
+        // vector emplace back something? 
+        // Pakke det inn i funksjon etter hvert
+        vec.emplace_back((availability >> i) & 1);
+    }
+    return vec;
 }
