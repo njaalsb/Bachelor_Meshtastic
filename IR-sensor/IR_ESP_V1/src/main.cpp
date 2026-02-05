@@ -506,6 +506,8 @@ void vospi_resync()
   Serial.println("VoSPI resync timeout");
 }
 
+/*************************************************************************************/
+
 void set_reg(unsigned int reg)
 {
   byte error;
@@ -579,6 +581,7 @@ int read_data()
   return 0;  // Success
 }
 
+/*************************************************************************************/
 
 void loop()
 {

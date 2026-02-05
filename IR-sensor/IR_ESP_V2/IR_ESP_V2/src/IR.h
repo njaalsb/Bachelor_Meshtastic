@@ -2,6 +2,12 @@
 
 #include "Wire.h"
 
-void I2C_connect(void);
+class IR {
+    private:
 
-void start_up(void);
+    public:
+        void I2C_connect(void);
+        void start_up(void);    
+        int read_stat();
+        byte read_power();
+};

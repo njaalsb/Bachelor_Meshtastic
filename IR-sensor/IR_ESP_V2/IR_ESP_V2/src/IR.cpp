@@ -3,9 +3,6 @@
 // I2C addresse:
 #define ADDRESSE (0x2A)
 
-// Addresser:
-#define status (0x0002)
-
 // Pins: 
 #define SPI_MOSI    23
 #define SPI_MISO    19
@@ -15,36 +12,90 @@
 #define I2C_SCL     22
 #define RESET_PIN   4
 
-void I2C_connect(void){
-    uint16_t stat;
-
+void IR::I2C_connect(void){
+    uint16_t status;
+    
+    // Kamera boot sekvens
     pinMode(RESET_PIN, OUTPUT);
+     
+    digitalWrite(RESET_PIN, HIGH);
 
-    Serial.println("Reebooter kamera");
+    delay(100);
 
-    // 5 sekund fra boot til I2C interfacen kan brukes 
     digitalWrite(RESET_PIN, LOW);
+
+    Serial.println("Rebooter kamera");
 
     delay(100);
     
     digitalWrite(RESET_PIN, HIGH);
     
-    delay(10000);
-
-    // Oppretter kontakt med kamera:
-    Wire.begin(I2C_SDA, I2C_SCL);
+    // 5 sekund fra boot til I2C interfacen er tilgjengelig
+    delay(5000);
 
     Serial.println("Reset fullført");
 
-    stat = Wire.read();
-
-    Wire.requestFrom(ADDRESSE, status);
+    // Oppretter kontakt med kamera:
+    Wire.begin(I2C_SDA, I2C_SCL);
+    Wire.setClock(100000);
 
     
 
-    Serial.println(stat);
+    status = IR::read_stat();
+
+    Serial.print("Kameraets status er: ");
+    Serial.println(status);
 }
 
-void start_up(void){
+int IR::read_stat(){  
+    int reg = 0x2;
+    int stat = 69;
+    byte error;
+    // Velger hvilket register vi ønsker å hente data fra
+    Wire.beginTransmission(ADDRESSE);
+
+    //Wire.write(0x00);// For å sjekke kameraets status må vi lese status registeret (0x0002)
+    //Wire.write(0x02);// dette må gjøres i to operasjoner siden addressen er 16-bits
+
+    Wire.write(reg >> 8 & 0xff);
+    Wire.write(reg & 0xff);            // sends one byte
+
+    delayMicroseconds(500);
+    error = Wire.endTransmission(true);
+
+    if(error != 0){
+        Serial.print("Feilmelding: ");
+        Serial.println(error);
+    }
+
+    // requester 2 byte fra kameraet
+    Wire.requestFrom(ADDRESSE, 2);
+
+    if(Wire.available() >= 2){
+        stat = Wire.read() << 8;  // High byte
+        stat |= Wire.read();       // Low byte
+    }
+
+    return stat;
+}
+
+byte IR::read_power(){
+    Wire.beginTransmission(ADDRESSE);
+    byte stat = 0;
+
+    Wire.write(0x00);
+    Wire.write(0x00);
+    Wire.endTransmission(ADDRESSE);
+    delayMicroseconds(100);
+    Wire.requestFrom(ADDRESSE, 1);
+
+    if(Wire.available()){
+        stat = Wire.read();
+    }
+
+    return stat;
+}
+
+void IR::start_up(void){
     ;;
 }
