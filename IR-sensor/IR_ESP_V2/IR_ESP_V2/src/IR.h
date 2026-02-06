@@ -20,7 +20,6 @@
 class IR {
     private:
         void boot(void);
-
     public:
         IR() = default;
         void I2C_connect(void);
@@ -28,5 +27,6 @@ class IR {
         int read_power();
         void sync();
         bool busy_bit();   
-        std::vector<int> int_to_byte(int input);
+        std::vector<int> int_to_bits(int input);
+        void print_vec(std::vector<int> input);
 };

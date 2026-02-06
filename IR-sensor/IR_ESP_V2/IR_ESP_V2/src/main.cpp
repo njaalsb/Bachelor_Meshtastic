@@ -3,7 +3,7 @@
 
 // Instansierer kameraet
 IR cam;
-
+bool busy;
 void setup() {
   Serial.begin(115200);
 
@@ -16,6 +16,7 @@ void setup() {
   SPI.setDataMode(SPI_MODE3); // Modus 3 fordi IDK
 }
 
+
 void loop() {
   delay(2000);
   int var;
@@ -24,7 +25,8 @@ void loop() {
   var = cam.read_stat();
   Serial.print("Status: ");
   Serial.println(var);
-
-  Serial.print("Powerstatus:");
-  Serial.println(cam.read_power());
+  busy = cam.busy_bit();
+  
+  //Serial.print("Powerstatus:");
+  //Serial.println(cam.read_power());
 }

@@ -101,11 +101,10 @@ void IR::boot(void){
     Serial.println("Reset fullført");
 }
 
+// sjekk bit 0 i status reg for å avgjøre om interface er busy
 bool IR::busy_bit(){
-    // sjekk bit 0 i status reg for å avgjøre om interface er busy
-    std::vector<int> resultat;
+    
     int reg = 0x02;
-    char availability;
     int state;
 
     Wire.beginTransmission(ADDRESSE);
@@ -121,21 +120,31 @@ bool IR::busy_bit(){
         state = Wire.read() << 8;  // High byte
         state = Wire.read();       // Low byte
     }
-
-    resultat = IR::int_to_byte(state);
-    return resultat[0];
+    std::vector<int> resultat = IR::int_to_bits(state);
+    
+    
+    IR::print_vec(resultat);
+    return resultat[0]==1;
 }
 
-std::vector<int> IR::int_to_byte(int input){
-    char availability;
-    availability = static_cast<char>(input);
-
+// Funksjon for å hente registerinnhold basert på verdi motatt
+std::vector<int> IR::int_to_bits(int input){
     std::vector<int> vec;
-
-    for(int i = 0; i < 8; i++){
-        // vector emplace back something? 
-        // Pakke det inn i funksjon etter hvert
-        vec.emplace_back((availability >> i) & 1);
-    }
+    
+    // Loop through all 16 bits (or 8 if you want byte-only)
+    for(int i = 0; i < 16; i++){  // Fixed: use constant, not vec.size()
+        vec.push_back((input >> i) & 1);
+    }    
     return vec;
+}
+
+void IR::print_vec(std::vector<int> input){
+    for(int i = 0; i < input.size(); i++){
+        Serial.print(input[i]);
+    }
+    Serial.println("");
+}
+
+void sync(void){
+    
 }
