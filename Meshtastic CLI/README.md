@@ -44,3 +44,28 @@ Kjør så følgende linje for å laste opp den nye konfigurasjonen:
 ```bash
 meshtastic --configure example_config.yaml
 ```
+
+### Kanaler
+
+Endre disse linjene i config-filen for å bruke 'Meshtastic Norway' sin mest brukte kanal:
+
+```bash
+bandwidth: 62
+codingRate: 5
+hopLimit: 3
+overrideFrequency: 869.525
+region: EU_868
+spreadFactor: 8
+```
+
+Ellers kan man endre preset på devicen eller kjøre preset kommandoer:
+
+```bash
+--ch-vlongslow        Change to the very long-range and slow modem preset
+--ch-longslow         Change to the long-range and slow modem preset
+--ch-longfast         Change to the long-range and fast modem preset
+--ch-medslow          Change to the med-range and slow modem preset
+--ch-medfast          Change to the med-range and fast modem preset
+--ch-shortslow        Change to the short-range and slow modem preset
+--ch-shortfast        Change to the short-range and fast modem preset
+```
