@@ -5,8 +5,19 @@
 #include <vector>
 #include <iostream>
 
-// I2C addresse:
-#define ADDRESSE (0x2A)
+// Kamera register 
+#define ADDRESSE (0x2A) // I2C addresse
+
+// Command ID register
+#define AGC (0x01)      //
+#define SYS (0x02)
+#define VID (0x03)
+#define OEM (0x08)
+
+
+#define GET (0x00)
+#define SET (0x01)
+#define RUN (0x02)
 
 // ESP32 Pins: 
 #define SPI_MOSI    23
@@ -16,6 +27,11 @@
 #define I2C_SDA     21
 #define I2C_SCL     22
 #define RESET_PIN   4
+
+// Kamera spesifikke størrelser 
+#define IMAGE_WIDTH 160
+#define IMAGE_HEIGHT 120
+
 
 class IR {
     private:
