@@ -145,6 +145,48 @@ void IR::print_vec(std::vector<int> input){
     Serial.println("");
 }
 
-void sync(void){
+void IR::sync(void){
+    int i;
+    int data = 0x0f;
+
+    // Steg 1. Deassert CS and idle SCK
+    digitalWrite(SPI_CS, HIGH);
+    delay(200); // Antar at et blokkerende delay vil stoppe SCK
+
+    IR::read_vospi_packet(packet_buffer);
+
+
     
+
+    while ((data & 0x0f) == 0x0f){
+        // Asserter CS
+        digitalWrite(SPI_CS, LOW);
+        data = SPI.transfer(0x00) << 8;
+        data |= SPI.transfer(0x00);
+        digitalWrite(SPI_CS, HIGH);
+        
+        if(!IR::is_discard_packet(packet_buffer)){
+            Serial.println("Synkronisering fullført");
+        }
+
+        for (i = 0; i < ((VOSPI_PACKET_SIZE - 2) / 2); i++) {
+            digitalWrite(SPI_CS, LOW);
+            SPI.transfer(0x00);
+            SPI.transfer(0x00);
+            digitalWrite(SPI_CS, HIGH);
+        }
+    }
+}
+
+// Sjekker etter discard packet, discard viss pakkenummeret er 0xF
+bool IR::is_discard_packet(byte* packet){
+    uint16_t packet_id = (packet[0] << 8) | packet[1];
+    return (packet_id & 0x0F00) == 0x0F00;
+}
+
+// CS må settes lav før denne funksjonen kalles
+void IR::read_vospi_packet(byte* packet){
+    for (int i = 0; i < VOSPI_PACKET_SIZE; i++){
+        packet[i] = SPI.transfer(0x00);
+    }
 }

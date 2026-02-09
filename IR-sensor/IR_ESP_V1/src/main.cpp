@@ -304,6 +304,7 @@ void lepton_sync(void)
 
   digitalWrite(SPI_CS, HIGH);
   delay(185);
+  
   while ((data & 0x0f) == 0x0f)
   {
     digitalWrite(SPI_CS, LOW);

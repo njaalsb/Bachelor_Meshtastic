@@ -28,9 +28,12 @@
 #define I2C_SCL     22
 #define RESET_PIN   4
 
-// Kamera spesifikke størrelser 
-#define IMAGE_WIDTH 160
-#define IMAGE_HEIGHT 120
+// Konfigurerer for RAW14-mode
+#define IMAGE_WIDTH 80    //pixler
+#define IMAGE_HEIGHT 60   //pixler
+#define IMAGE_PAYLOAD 160 //bytes
+#define VOSPI_PACKET_SIZE 164 // Bytes i en packet 4 byte header
+
 
 
 class IR {
@@ -38,6 +41,7 @@ class IR {
         void boot(void);
     public:
         IR() = default;
+        byte packet_buffer[VOSPI_PACKET_SIZE];
         void I2C_connect(void);
         int read_stat();
         int read_power();
@@ -45,4 +49,6 @@ class IR {
         bool busy_bit();   
         std::vector<int> int_to_bits(int input);
         void print_vec(std::vector<int> input);
+        bool is_discard_packet(byte* packet);
+        void read_vospi_packet(byte* packet);
 };
