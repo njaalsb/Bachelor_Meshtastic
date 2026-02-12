@@ -31,11 +31,8 @@ int IR::read_stat(){
     // Velger hvilket register vi ønsker å hente data fra
     Wire.beginTransmission(ADDRESSE);
 
-    //Wire.write(0x00);// For å sjekke kameraets status må vi lese status registeret (0x0002)
-    //Wire.write(0x02);// dette må gjøres i to operasjoner siden addressen er 16-bits
-
-    Wire.write(reg >> 8 & 0xff);
-    Wire.write(reg & 0xff);            // sends one byte
+    Wire.write(reg >> 8 & 0xff); // For å sjekke kameraets status må vi lese status registeret (0x0002)
+    Wire.write(reg & 0xff);      // dette må gjøres i to operasjoner siden addressen er 16-bits      
 
     delayMicroseconds(500);
     error = Wire.endTransmission(true);
@@ -74,8 +71,8 @@ int IR::read_power(){
     Wire.requestFrom(ADDRESSE, 2);
 
     if(Wire.available() >= 2){
-        stat = Wire.read() << 8;  // High byte
-        stat |= Wire.read();       // Low byte
+        stat = Wire.read() << 8;    // High byte
+        stat |= Wire.read();        // Low byte
     }
 
     return stat;
@@ -101,9 +98,9 @@ void IR::boot(void){
     Serial.println("Reset fullført");
 }
 
-// sjekk bit 0 i status reg for å avgjøre om interface er busy
+
 bool IR::busy_bit(){
-    
+    // sjekk bit 0 i status reg for å avgjøre om interface er busy
     int reg = 0x02;
     int state;
 
@@ -145,37 +142,45 @@ void IR::print_vec(std::vector<int> input){
     Serial.println("");
 }
 
+// Kalles ved startup eller når ting ikke er synkronisert
+/*
 void IR::sync(void){
-    int i;
-    int data = 0x0f;
-
-    // Steg 1. Deassert CS and idle SCK
-    digitalWrite(SPI_CS, HIGH);
-    delay(200); // Antar at et blokkerende delay vil stoppe SCK
-
-    IR::read_vospi_packet(packet_buffer);
-
-
+    int data = 0x0F00;  // Inialiserer data som discard
     
-
-    while ((data & 0x0f) == 0x0f){
-        // Asserter CS
-        digitalWrite(SPI_CS, LOW);
+    // deasserter CS og venter litt
+    digitalWrite(SPI_CS, HIGH);
+    delay(200);
+    digitalWrite(SPI_CS, LOW);  // Asserter CS for å starte avlesning 
+    
+    // Fortsetter å lese helt til vi får en pakke som ikke er av discard typen 
+    // (ikke 0x0F00 i headeren)
+    while ((data & 0x0F00) == 0x0F00){
         data = SPI.transfer(0x00) << 8;
         data |= SPI.transfer(0x00);
-        digitalWrite(SPI_CS, HIGH);
         
-        if(!IR::is_discard_packet(packet_buffer)){
-            Serial.println("Synkronisering fullført");
-        }
-
-        for (i = 0; i < ((VOSPI_PACKET_SIZE - 2) / 2); i++) {
-            digitalWrite(SPI_CS, LOW);
+        // Tømmer resterende 162 bytes for å sjekke neste header
+        for (int i = 0; i < (VOSPI_PACKET_SIZE - 2); i++) {
             SPI.transfer(0x00);
-            SPI.transfer(0x00);
-            digitalWrite(SPI_CS, HIGH);
         }
     }
+    
+    digitalWrite(SPI_CS, HIGH);
+    Serial.println("Synkronisering fullført");
+}*/
+
+void IR::sync(void){
+    digitalWrite(SPI_CS, HIGH);
+    delay(200);
+    digitalWrite(SPI_CS, LOW);
+    
+    // Keep reading packets until we get a non-discard one
+    do {
+        read_vospi_packet(packet_buffer);  // Read all 164 bytes into buffer
+    } while (is_discard_packet(packet_buffer));
+    
+    digitalWrite(SPI_CS, HIGH);
+    Serial.println("Synkronisering fullført");
+    // packet_buffer now contains a valid packet!
 }
 
 // Sjekker etter discard packet, discard viss pakkenummeret er 0xF
@@ -189,4 +194,16 @@ void IR::read_vospi_packet(byte* packet){
     for (int i = 0; i < VOSPI_PACKET_SIZE; i++){
         packet[i] = SPI.transfer(0x00);
     }
+}
+
+// Cursed og hardkodet funksjon
+void print_buffer(byte buffer[VOSPI_PACKET_SIZE]){
+    Serial.println("VOSPI PACKET:");
+    for(int i = 0; i < VOSPI_PACKET_SIZE; i++){
+        for(int j = 0; j < 4; j++){
+            Serial.println(buffer[i+j]);
+        }
+        Serial.println("");
+    }
+    Serial.println("END OF VOSPI PACKET");
 }

@@ -23,12 +23,9 @@ void setup() {
 
 
 void loop() {
+  // Sync var vellykket
   cam.sync();
   
-  //Serial.print("Kamerastatus:");
+  Serial.println("Kom ut av sync loop");
 
-  
-  
-  //Serial.print("Powerstatus:");
-  //Serial.println(cam.read_power());
 }

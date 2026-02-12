@@ -29,12 +29,10 @@
 #define RESET_PIN   4
 
 // Konfigurerer for RAW14-mode
-#define IMAGE_WIDTH 80    //pixler
-#define IMAGE_HEIGHT 60   //pixler
-#define IMAGE_PAYLOAD 160 //bytes
-#define VOSPI_PACKET_SIZE 164 // Bytes i en packet 4 byte header
-
-
+#define IMAGE_WIDTH 80          //pixler
+#define IMAGE_HEIGHT 60         //pixler
+#define IMAGE_PAYLOAD 160       //bytes
+#define VOSPI_PACKET_SIZE 164   // Bytes i en packet 4 byte header
 
 class IR {
     private:
