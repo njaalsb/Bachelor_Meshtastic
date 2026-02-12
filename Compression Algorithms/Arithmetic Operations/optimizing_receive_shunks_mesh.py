@@ -1,19 +1,22 @@
+import time
 import struct
 import base64
 from pathlib import Path
 import meshtastic.serial_interface
 from pubsub import pub
-import time
 
 HEADER_SIZE = 7
 
+# Litt ACK-delay for half-duplex på LongFast
+ACK_DELAY_S = 0.15
+
 class Reassembler:
     def __init__(self):
-        self.store = {}
+        self.store = {}  # msg_id -> {"total": int, "parts": {idx: bytes}}
 
     def add_packet(self, packet: bytes):
         if len(packet) < HEADER_SIZE:
-            return None, None
+            return None, None, None, None
 
         msg_id, total, idx, plen = struct.unpack(">BHHH", packet[:HEADER_SIZE])
         payload = packet[HEADER_SIZE:HEADER_SIZE + plen]
@@ -22,14 +25,20 @@ class Reassembler:
         s["total"] = total
         s["parts"][idx] = payload
 
-        print(f"Har {len(s['parts'])}/{total} chunks")
+        have = len(s["parts"])
+        return msg_id, total, idx, have
 
-        if len(s["parts"]) == total:
-            data = b"".join(s["parts"][i] for i in range(total))
-            del self.store[msg_id]
-            return data, msg_id
-
-        return None, None
+    def try_rebuild(self, msg_id: int):
+        s = self.store.get(msg_id)
+        if not s:
+            return None
+        total = s["total"]
+        parts = s["parts"]
+        if len(parts) != total:
+            return None
+        data = b"".join(parts[i] for i in range(total))
+        del self.store[msg_id]
+        return data
 
 def unique_path(dirpath: Path, stem: str, suffix: str) -> Path:
     p = dirpath / f"{stem}{suffix}"
@@ -49,39 +58,47 @@ out_dir.mkdir(exist_ok=True)
 def on_receive(packet, interface):
     decoded = packet.get("decoded", {})
     text = decoded.get("text") or decoded.get("data", {}).get("text")
-
     if not text:
         return
 
-    if text.startswith("IMG|"):
-        try:
-            _, msg_id_str, idx_str, b64 = text.split("|", 3)
-            raw = base64.b64decode(b64)
+    # Ignorer ACK som kommer tilbake
+    if text.startswith("ACK|"):
+        return
 
-            msg_id, total, idx, plen = struct.unpack(">BHHH", raw[:HEADER_SIZE])
+    if not text.startswith("IMG|"):
+        # Optional debug:
+        # print("Tekst:", text)
+        return
 
-            rebuilt, finished_id = reasm.add_packet(raw)
+    try:
+        _, msg_id_str, idx_str, b64 = text.split("|", 3)
+        raw = base64.b64decode(b64)
 
-            # Send ACK
-            interface.sendText(f"ACK|{msg_id}|{idx}")
+        msg_id, total, idx, have = reasm.add_packet(raw)
+        if msg_id is None:
+            return
 
-            if rebuilt is not None:
-                ts = time.strftime("%Y%m%d_%H%M%S")
-                stem = f"received_{ts}_msg{finished_id}"
-                out_path = unique_path(out_dir, stem, ".webp")
-                out_path.write_bytes(rebuilt)
+        print(f"msg_id={msg_id}  mottatt idx={idx}  have={have}/{total}")
 
-                print(f"\n Ferdig bilde! {out_path.resolve()} ({len(rebuilt)} bytes)\n")
+        # Send ACK (liten delay for å unngå kollisjon)
+        time.sleep(ACK_DELAY_S)
+        interface.sendText(f"ACK|{msg_id}|{idx}")
 
-        except Exception as e:
-            print("Feil:", e)
+        rebuilt = reasm.try_rebuild(msg_id)
+        if rebuilt is not None:
+            ts = time.strftime("%Y%m%d_%H%M%S")
+            stem = f"received_{ts}_msg{msg_id}"
+            out_path = unique_path(out_dir, stem, ".webp")
+            out_path.write_bytes(rebuilt)
+            print(f"\n✅ Ferdig bilde! Lagret: {out_path.resolve()} ({len(rebuilt)} bytes)\n")
+
+    except Exception as e:
+        print("Feil ved parsing:", e)
 
 def main():
     iface = meshtastic.serial_interface.SerialInterface()
     print("Lytter... Ctrl+C")
-
     pub.subscribe(on_receive, "meshtastic.receive")
-
     try:
         while True:
             time.sleep(1)

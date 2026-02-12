@@ -8,7 +8,7 @@ import meshtastic.serial_interface
 from pubsub import pub
 
 # ===== SETTINGS =====
-QUALITY = 8
+QUALITY = 8 
 MAX_PAYLOAD = 80          # trygg verdi for sendText (base64 overhead)
 WINDOW_SIZE = 5
 DELAY = 0.35
