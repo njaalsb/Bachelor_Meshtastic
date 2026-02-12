@@ -37,6 +37,7 @@
 class IR {
     private:
         void boot(void);
+        bool is_discard_packet(byte* packet);
     public:
         IR() = default;
         byte packet_buffer[VOSPI_PACKET_SIZE];
@@ -47,6 +48,6 @@ class IR {
         bool busy_bit();   
         std::vector<int> int_to_bits(int input);
         void print_vec(std::vector<int> input);
-        bool is_discard_packet(byte* packet);
         void read_vospi_packet(byte* packet);
+        void print_buffer(byte buffer[VOSPI_PACKET_SIZE]);
 };

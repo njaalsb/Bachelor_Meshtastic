@@ -197,9 +197,9 @@ void IR::read_vospi_packet(byte* packet){
 }
 
 // Cursed og hardkodet funksjon
-void print_buffer(byte buffer[VOSPI_PACKET_SIZE]){
-    Serial.println("VOSPI PACKET:");
-    for(int i = 0; i < VOSPI_PACKET_SIZE; i++){
+void IR::print_buffer(byte buffer[VOSPI_PACKET_SIZE]){
+    Serial.println("===================VOSPI PACKET===========================");
+    for(int i = 0; i < VOSPI_PACKET_SIZE; i+3){
         for(int j = 0; j < 4; j++){
             Serial.println(buffer[i+j]);
         }

@@ -19,13 +19,25 @@ void setup() {
     Serial.print("Status: ");
     Serial.println(var);
     busy = cam.busy_bit();
+
+    cam.sync();
+
 }
 
 
 void loop() {
-  // Sync var vellykket
-  cam.sync();
-  
-  Serial.println("Kom ut av sync loop");
-
+    // Test sekvens:
+    /*
+    * 1. Booter kamera
+    * 2. Kobler på I2C
+    * 3. Leser statusregister
+    * 4. Starter SPI
+    * 5. Sjekker BUSY bit
+    * 6. Etablerer SYNC 
+    * 7. Print buffer (som forhåpentligvis er stappbuff av bra data!)
+    */
+    
+    Serial.println("Kom ut av sync loop");
+    cam.print_buffer(cam.packet_buffer);
+    delay(1000);
 }
