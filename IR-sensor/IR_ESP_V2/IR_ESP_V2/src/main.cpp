@@ -16,15 +16,12 @@ void setup() {
     SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI, SPI_CS);
     SPI.setDataMode(SPI_MODE3); // Modus 3 fordi IDK
 
-    var = cam.read_stat();
     Serial.print("Status: ");
-    Serial.println(var);
-    busy = cam.busy_bit();
+    Serial.println(cam.read_stat());
+    busy = cam.busy_bit(); // Sjekker om I2C interface er klart 
 
-    cam.sync();
-
+    cam.sync(); // Synkroniserer
 }
-
 
 void loop() {
     // Test sekvens:
