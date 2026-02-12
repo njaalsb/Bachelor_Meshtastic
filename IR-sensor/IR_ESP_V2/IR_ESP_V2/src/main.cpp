@@ -4,6 +4,7 @@ int var;
 // Instansierer kameraet
 IR cam;
 bool busy;
+
 void setup() {
     Serial.begin(115200);
 
