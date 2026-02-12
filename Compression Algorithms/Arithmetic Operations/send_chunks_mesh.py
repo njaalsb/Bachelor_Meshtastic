@@ -56,6 +56,6 @@ if __name__ == "__main__":
         iface.sendText(text_packet)
         print(f"Sendt {i+1}/{len(packets)}")
 
-        time.sleep(1.5)  # viktig på LoRa
+        time.sleep(15)  # viktig på LoRa
 
     print("Ferdig.")
