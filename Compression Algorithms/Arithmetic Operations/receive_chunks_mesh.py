@@ -31,6 +31,22 @@ class Reassembler:
         return None
 
 
+def unique_path(dirpath: Path, stem: str, suffix: str) -> Path:
+    """
+    Lager et unikt filnavn i dirpath:
+    stem + suffix, eller stem_1 + suffix, stem_2 + suffix, ...
+    """
+    p = dirpath / f"{stem}{suffix}"
+    if not p.exists():
+        return p
+    n = 1
+    while True:
+        p2 = dirpath / f"{stem}_{n}{suffix}"
+        if not p2.exists():
+            return p2
+        n += 1
+
+
 reasm = Reassembler()
 out_dir = Path(__file__).parent / "received"
 out_dir.mkdir(exist_ok=True)
@@ -56,12 +72,13 @@ def on_receive(packet, interface):
 
         rebuilt = reasm.add_packet(raw)
 
-        print(f"Mottatt chunk {idx_str}")
-
         if rebuilt is not None:
-            out_path = out_dir / "received.webp"
+            ts = time.strftime("%Y%m%d_%H%M%S")
+            stem = f"received_{ts}_msg{msg_id}"
+            out_path = unique_path(out_dir, stem, ".webp")
+
             out_path.write_bytes(rebuilt)
-            print(f"\n Ferdig bilde! {out_path.resolve()}\n")
+            print(f"\n Ferdig bilde! Lagret: {out_path.resolve()} ({len(rebuilt)} bytes)\n")
 
     except Exception as e:
         print("Feil ved parsing:", e)
