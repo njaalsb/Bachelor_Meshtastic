@@ -1,16 +1,18 @@
 import struct
+import base64
 from pathlib import Path
+import meshtastic
 import meshtastic.serial_interface
 from pubsub import pub
+import time
 
-MAX_CHUNK_SIZE = 255
 HEADER_SIZE = 7
 
 class Reassembler:
     def __init__(self):
-        self.store = {}  # msg_id -> {total:int, parts:{idx:bytes}}
+        self.store = {}
 
-    def add_packet(self, packet: bytes) -> bytes | None:
+    def add_packet(self, packet: bytes):
         if len(packet) < HEADER_SIZE:
             return None
 
@@ -25,36 +27,55 @@ class Reassembler:
             data = b"".join(s["parts"][i] for i in range(total))
             del self.store[msg_id]
             return data
+
         return None
+
 
 reasm = Reassembler()
 out_dir = Path(__file__).parent / "received"
 out_dir.mkdir(exist_ok=True)
 
+
 def on_receive(packet, interface):
     decoded = packet.get("decoded", {})
-    data = decoded.get("payload")  # bytes når sendData brukes
+    text = decoded.get("text") or decoded.get("data", {}).get("text")
 
-    if not data:
+    if not text:
         return
 
-    # Meshtastic kan gi payload som bytes eller bytearray
-    if isinstance(data, bytearray):
-        data = bytes(data)
+    if not text.startswith("IMG|"):
+        print("Vanlig tekst:", text)
+        return
 
-    rebuilt = reasm.add_packet(data)
-    if rebuilt is not None:
-        out_path = out_dir / "received.webp"
-        out_path.write_bytes(rebuilt)
-        print(f"✅ Ferdig bilde! Skrev: {out_path.resolve()} ({len(rebuilt)} bytes)")
-
-if __name__ == "__main__":
-    iface = meshtastic.serial_interface.SerialInterface()
-    pub.subscribe(on_receive, "meshtastic.receive")
-    print("Lytter… Ctrl+C for å avslutte")
     try:
-        import time
+        _, msg_id_str, idx_str, b64 = text.split("|", 3)
+        raw = base64.b64decode(b64)
+
+        rebuilt = reasm.add_packet(raw)
+
+        print(f"Mottatt chunk {idx_str}")
+
+        if rebuilt is not None:
+            out_path = out_dir / "received.webp"
+            out_path.write_bytes(rebuilt)
+            print(f"\n✅ Ferdig bilde! {out_path.resolve()}\n")
+
+    except Exception as e:
+        print("Feil ved parsing:", e)
+
+
+def main():
+    iface = meshtastic.serial_interface.SerialInterface()
+    print("Lytter... Ctrl+C")
+
+    pub.subscribe(on_receive, "meshtastic.receive")
+
+    try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        pass
+        iface.close()
+
+
+if __name__ == "__main__":
+    main()
