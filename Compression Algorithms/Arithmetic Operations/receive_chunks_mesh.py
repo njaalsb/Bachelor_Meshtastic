@@ -51,6 +51,9 @@ def on_receive(packet, interface):
         _, msg_id_str, idx_str, b64 = text.split("|", 3)
         raw = base64.b64decode(b64)
 
+        msg_id, total, idx, plen = struct.unpack(">BHHH", raw[:HEADER_SIZE])
+        print(f"Mottatt chunk {idx} av totalt {total}")
+
         rebuilt = reasm.add_packet(raw)
 
         print(f"Mottatt chunk {idx_str}")
@@ -58,7 +61,7 @@ def on_receive(packet, interface):
         if rebuilt is not None:
             out_path = out_dir / "received.webp"
             out_path.write_bytes(rebuilt)
-            print(f"\n✅ Ferdig bilde! {out_path.resolve()}\n")
+            print(f"\n Ferdig bilde! {out_path.resolve()}\n")
 
     except Exception as e:
         print("Feil ved parsing:", e)
