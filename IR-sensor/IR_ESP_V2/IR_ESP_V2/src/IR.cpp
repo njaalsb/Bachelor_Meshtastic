@@ -173,14 +173,15 @@ void IR::sync(void){
     delay(200);
     digitalWrite(SPI_CS, LOW);
     
-    // Keep reading packets until we get a non-discard one
+    int segment = 0;
     do {
-        read_vospi_packet(packet_buffer);  // Read all 164 bytes into buffer
-    } while (is_discard_packet(packet_buffer));
+        read_vospi_packet(packet_buffer);
+        uint16_t header = (packet_buffer[0] << 8) | packet_buffer[1];
+        segment = (header >> 12) & 0x7;
+    } while (is_discard_packet(packet_buffer) || segment == 0);
     
     digitalWrite(SPI_CS, HIGH);
-    Serial.println("Synkronisering fullført");
-    // packet_buffer now contains a valid packet!
+    Serial.println("Synkronisering fullført - Segment " + String(segment));
 }
 
 // Sjekker etter discard packet, discard viss pakkenummeret er 0xF

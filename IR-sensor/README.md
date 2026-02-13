@@ -67,3 +67,4 @@ Gjeldende konfigurasjon er følgende:
 - 4 frames per bilde
 - 60 packets per frame 
 - 164 bytes per packet
+- Discard packet format: Header 0x1FFF, binært: 0001 1111 1111 1111

@@ -36,6 +36,12 @@ void loop() {
     */
     
     Serial.println("Kom ut av sync loop");
-    cam.print_buffer(cam.packet_buffer);
-    delay(1000);
+    
+    digitalWrite(SPI_CS, LOW);
+    while(true){
+        delay(1000);
+        cam.print_buffer(cam.packet_buffer);
+        delay(1000);
+        cam.read_vospi_packet(cam.packet_buffer);
+    }
 }
