@@ -32,7 +32,7 @@ def chunkify(data: bytes, msg_id: int, max_payload: int):
 
 if __name__ == "__main__":
     base = Path(__file__).parent
-    image_path = base / "My mom is kinda homeless.jpg"
+    image_path = base / "onMyMama.jpg"
 
     iface = meshtastic.serial_interface.SerialInterface()
 
