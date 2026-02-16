@@ -1,10 +1,11 @@
 # FLIR Lepton 3.1R
+
 - Infrarød bildesensor
 - Kameraet styres over I2C
-- Bildet overføres via SPI
-- Oppløsning 160 x 120 pixler
+- Bildet/video overføres via SPI
+- Oppløsning 160 x 120 eller 80 x 60 pixler
 
-### PINOUT-FLIR Lepton 3.1R
+## PINOUT-FLIR Lepton 3.1R
 
 - Pin 1 - SCL: Camera Control Interface Clock, I2C
 - Pin 2 - SDA: Camera Control Interface Data, I2C
@@ -17,12 +18,12 @@
 - Pin 9 - VSYNC: VSync
 - Pin 10 - EN: Enable, Active High
 
-### Eksempelkode:
+## Eksempelkode:
 [Arduino C eksempelkode, utdatert](https://github.com/groupgets/LeptonModule/blob/master/software/arduino_i2c/Lepton.ino)
 
 [Youtube video om IR-sensor](https://www.youtube.com/watch?v=NLrTN8MurZw)
 
-### Firmware:
+## Firmware:
 [Firmware ESP32T3S3](https://github.com/meshtastic/firmware/tree/develop/variants/esp32s3)
 
 ## PureThermal Breakout Board:
@@ -61,10 +62,16 @@ NC = Not Connected/floating
 - PIN19 - GND -> GND ESP
 - PIN20 - PWN_DWN_L -> 3.3V
 
-# Bildeformat:
+## Bildeformat:
+
 Gjeldende konfigurasjon er følgende:
+
 - 80 x 60 pixler
 - 4 frames per bilde
 - 60 packets per frame 
 - 164 bytes per packet
-- Discard packet format: Header 0x1FFF, binært: 0001 1111 1111 1111
+- Discard packet format: Header: 31, Hex 0x1FFF, binært: 0001 1111 1111 1111
+- Segment number 1-4, TTT-bits (1-3) enkoder sekvensnummer.
+- Ved en valid pakke er bit 0 lik 0
+
+![alt text](image-2.png)

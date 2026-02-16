@@ -7,7 +7,7 @@ void IR::I2C_connect(void){
 
     // Oppretter kontakt med kamera:
     Wire.begin(I2C_SDA, I2C_SCL);
-    Wire.setClock(100000);
+    Wire.setClock(I2C_CLK_FREQ);
 
     status = IR::read_stat();
 
@@ -169,19 +169,11 @@ void IR::sync(void){
 }*/
 
 void IR::sync(void){
+    // Simple sync: just perform the timing sequence
+    // Don't try to find specific packets here
     digitalWrite(SPI_CS, HIGH);
-    delay(200);
-    digitalWrite(SPI_CS, LOW);
-    
-    int segment = 0;
-    do {
-        read_vospi_packet(packet_buffer);
-        uint16_t header = (packet_buffer[0] << 8) | packet_buffer[1];
-        segment = (header >> 12) & 0x7;
-    } while (is_discard_packet(packet_buffer) || segment == 0);
-    
-    digitalWrite(SPI_CS, HIGH);
-    Serial.println("Synkronisering fullført - Segment " + String(segment));
+    delay(185);  // Wait >185ms for frame period
+    Serial.println("VoSPI resync - waiting for next frame");
 }
 
 // Sjekker etter discard packet, discard viss pakkenummeret er 0xF
