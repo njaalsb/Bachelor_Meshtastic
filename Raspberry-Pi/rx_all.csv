@@ -1,3 +1,4 @@
+rx_timestamp,from_id,portnum,payload_bytes,rssi_dbm,snr_db,has_text,text
 
 2026-02-16T15:41:36,363634937,POSITION_APP,28,-28,6.25,0,
 2026-02-16T15:41:45,2232544628,TEXT_MESSAGE_APP,40,-28,7.0,1,SZ=040;SEQ=000001;TS=1771252902817;|AAAA
