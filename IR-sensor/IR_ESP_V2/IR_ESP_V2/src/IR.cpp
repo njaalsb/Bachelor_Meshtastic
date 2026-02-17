@@ -169,11 +169,54 @@ void IR::sync(void){
 }*/
 
 void IR::sync(void){
-    // Simple sync: just perform the timing sequence
-    // Don't try to find specific packets here
+    // Robust VoSPI synchronization:
+    // 1. Deassert CS and wait for frame period
+    // 2. Assert CS and search for segment 1, packet 0
+    // 3. Once found, we're synchronized
+    
     digitalWrite(SPI_CS, HIGH);
-    delay(185);  // Wait >185ms for frame period
-    Serial.println("VoSPI resync - waiting for next frame");
+    delay(200);  // Wait for frame period
+    digitalWrite(SPI_CS, LOW);
+    delayMicroseconds(10);
+    
+    Serial.println("VoSPI sync: Searching for segment 1...");
+    
+    int attempts = 0;
+    int discard_count = 0;
+    bool found_seg1 = false;
+    
+    // Read up to 300 packets looking for segment 1, packet 0
+    for (int i = 0; i < 300; i++) {
+        read_vospi_packet(packet_buffer);
+        attempts++;
+        
+        if (is_discard_packet(packet_buffer)) {
+            discard_count++;
+            // After discards, next valid packets should be segment 1
+            if (discard_count > 5) {
+                Serial.println("  Found discard packets, waiting for segment 1...");
+            }
+            continue;
+        }
+        
+        int seg = get_segment_number(packet_buffer);
+        int pkt = get_packet_number(packet_buffer);
+        
+        // Found segment 1!
+        if (seg == 1 && pkt >= 0 && pkt < 60) {
+            Serial.printf("  SYNC SUCCESS: Found Seg 1, Pkt %d after %d packets\n", pkt, attempts);
+            found_seg1 = true;
+            break;
+        }
+    }
+    
+    digitalWrite(SPI_CS, HIGH);
+    
+    if (!found_seg1) {
+        Serial.println("  WARNING: Sync incomplete, will retry next frame");
+    }
+    
+    delay(100);
 }
 
 // Sjekker etter discard packet, discard viss pakkenummeret er 0xF
@@ -189,6 +232,17 @@ void IR::read_vospi_packet(byte* packet){
     }
 }
 
+// Helper functions for packet parsing
+int IR::get_segment_number(byte* packet){
+    uint16_t header = (packet[0] << 8) | packet[1];
+    return (header >> 12) & 0x7;
+}
+
+int IR::get_packet_number(byte* packet){
+    uint16_t header = (packet[0] << 8) | packet[1];
+    return header & 0xFF;
+}
+
 // Cursed og hardkodet funksjon
 void IR::print_buffer(byte buffer[VOSPI_PACKET_SIZE]){
     Serial.println("===================VOSPI PACKET===========================");
@@ -198,4 +252,37 @@ void IR::print_buffer(byte buffer[VOSPI_PACKET_SIZE]){
     }
     Serial.println("");
     Serial.println("END OF VOSPI PACKET");
+}
+
+void IR::set_freq_out(void){
+    // Configure I2S to generate 25MHz clock on GPIO0 using APLL
+    i2s_config_t i2s_config = {
+        .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
+        .sample_rate = 25000000,  // 25MHz target
+        .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+        .dma_buf_count = 2,
+        .dma_buf_len = 8,
+        .use_apll = true,  // Enable APLL for precise frequency
+        .tx_desc_auto_clear = true,
+        .fixed_mclk = 0
+    };
+
+    i2s_pin_config_t pin_config = {
+        .bck_io_num = FREQ_OUT,    // Bit clock output on GPIO0
+        .ws_io_num = -1,            // No word select needed
+        .data_out_num = -1,         // No data output needed
+        .data_in_num = -1           // No data input needed
+    };
+
+    // Install and configure I2S driver
+    i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
+    i2s_set_pin(I2S_NUM_0, &pin_config);
+    
+    // Start I2S to begin clock output
+    i2s_start(I2S_NUM_0);
+    
+    Serial.println("25MHz clock configured on GPIO0 using I2S with APLL");
 }

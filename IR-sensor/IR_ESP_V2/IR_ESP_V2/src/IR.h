@@ -4,7 +4,7 @@
 #include "SPI.h"
 #include <vector>
 #include <iostream>
-
+#include "driver/i2s.h"
 // Kamera register 
 #define ADDRESSE (0x2A) // I2C addresse
 
@@ -28,11 +28,13 @@
 #define I2C_SCL     22
 #define RESET_PIN   4
 
+#define FREQ_OUT 0
+
 #define I2C_CLK_FREQ 100000 // 100KHz I2C klokke
 
 // Konfigurerer for RAW14-mode
-#define IMAGE_WIDTH 80          // pixler
-#define IMAGE_HEIGHT 60         // pixler
+#define IMAGE_WIDTH 160          // pixler
+#define IMAGE_HEIGHT 120         // pixler
 #define IMAGE_PAYLOAD 160       // bytes
 #define VOSPI_PACKET_SIZE 164   // Bytes i en packet 4 byte header
 #define VOSPI_FRAME_SIZE 4      // 4 stk
@@ -43,7 +45,8 @@ class IR {
     private:
         void boot(void);
     public:
-        IR() = default;
+        IR() = default; // default konstruktør 
+        void set_freq_out(void);
         byte packet_buffer[VOSPI_PACKET_SIZE];
         void I2C_connect(void);
         int read_stat();
@@ -55,4 +58,6 @@ class IR {
         void read_vospi_packet(byte* packet);
         void print_buffer(byte buffer[VOSPI_PACKET_SIZE]);
         bool is_discard_packet(byte* packet);
+        int get_packet_number(byte* packet);
+        int get_segment_number(byte* packet);
 };
