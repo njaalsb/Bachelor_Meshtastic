@@ -26,9 +26,9 @@
 #define SPI_CS      5
 #define I2C_SDA     21
 #define I2C_SCL     22
-#define RESET_PIN   4
+#define RESET_PIN   0
 
-#define FREQ_OUT 0
+#define FREQ_OUT 4
 
 #define I2C_CLK_FREQ 100000 // 100KHz I2C klokke
 
