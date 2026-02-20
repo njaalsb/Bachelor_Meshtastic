@@ -6,6 +6,8 @@ from pathlib import Path
 
 import numpy as np
 import cv2
+
+from meshtastic import BROADCAST_NUM
 import meshtastic.serial_interface
 
 HEADER_SIZE = 7
@@ -14,7 +16,14 @@ W, H = 160, 120          # Lepton 3.1R
 MAX_PAYLOAD = 120        # samme konservative som du bruker
 SLEEP_S = 2             # LoRa pause
 
-# ---------- Chunking (samme stil som din) ----------
+def send_message(message):
+    interface.sendText(
+        text=message,
+        destinationId=BROADCAST_NUM,
+        wantAck=False,
+        wantResponse=False
+        )
+
 def chunkify(data: bytes, msg_id: int, max_payload: int):
     total_chunks = (len(data) + max_payload - 1) // max_payload
     chunks = []
@@ -24,7 +33,6 @@ def chunkify(data: bytes, msg_id: int, max_payload: int):
         chunks.append(header + payload)
     return chunks
 
-# ---------- TXT -> 16-bit words ----------
 def parse_vospi_packets_words(txt: str):
     """
     Leser blocks som:
@@ -134,31 +142,28 @@ def pack_ir8_payload(img8: np.ndarray) -> bytes:
 if __name__ == "__main__":
     base = Path(__file__).parent
     txt_path = base / "ir_sensor_image.txt"
-
     txt = txt_path.read_text(encoding="utf-8", errors="ignore")
     packets = parse_vospi_packets_words(txt)
-
+    
     img8 = build_frame_8bit_from_packets(packets, width=W, height=H)
-
-    # lokal preview (så du ser at parsing gir noe)
+    
     preview = base / "ir_preview.png"
     cv2.imwrite(str(preview), img8)
     print(f"Preview lagret: {preview.resolve()}  shape={img8.shape}")
-
-    # bygg rå payload og send
+    
     payload = pack_ir8_payload(img8)
-
-    iface = meshtastic.serial_interface.SerialInterface()
-
+    
+    interface = meshtastic.serial_interface.SerialInterface()
+    
     msg_id = random.randint(0, 255)
+    
     chunks = chunkify(payload, msg_id=msg_id, max_payload=MAX_PAYLOAD)
-
+    
     print(f"Sender IR8: {len(chunks)} chunks (msg_id={msg_id}) bytes={len(payload)}")
-
-    for i, ch in enumerate(chunks):
-        b64 = base64.b64encode(ch).decode()
+    
+    for i in enumerate(chunks):
         # IR8|msgid|chunkindex|base64
-        iface.sendText(f"IR8|{msg_id}|{i}|{b64}")
+        send_message(i)
         print(f"Sendt {i+1}/{len(chunks)}")
         time.sleep(SLEEP_S)
 
