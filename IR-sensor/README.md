@@ -1,9 +1,11 @@
 # FLIR Lepton 3.1R
-
+- PN 500-0758-03
 - Infrarød bildesensor
 - Kameraet styres over I2C
 - Bildet/video overføres via SPI
-- Oppløsning 160 x 120 eller 80 x 60 pixler
+- Oppløsning 160 x 120
+- 12 micron pixel pitch 
+- Radiometrisk output (IDK hva det betyr)
 
 ## PINOUT-FLIR Lepton 3.1R
 
@@ -37,7 +39,7 @@
 ![alt text](image-1.png)
 
 
-## Oppkobling: 
+## Oppkobling ESP32: 
 
 NC = Not Connected/floating
 
@@ -66,7 +68,7 @@ NC = Not Connected/floating
 
 Gjeldende konfigurasjon er følgende:
 
-- 80 x 60 pixler
+- 160 x 120 pixler
 - 4 frames per bilde
 - 60 packets per frame 
 - 164 bytes per packet
