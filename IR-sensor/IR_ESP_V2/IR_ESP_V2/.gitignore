@@ -4,3 +4,5 @@
 .vscode/launch.json
 .vscode/ipch
 IR-WS.code-workspace
+IR-sensor\IR_ESP_V1
+IR-sensor\260128-123947-esp32dev
