@@ -11,6 +11,7 @@
 
 #include "LeptonThread.h"
 #include "MyLabel.h"
+#include "MeshtasticHelper.h"
 
 void printUsage(char *cmd) {
         char *cmdname = basename(cmd);
@@ -140,6 +141,8 @@ int main( int argc, char **argv )
 	QObject::connect(button1, SIGNAL(clicked()), thread, SLOT(performFFC()));
 	thread->start();
 	
+	MeshtasticHelper::sendMessage("Wowowowowow");
+
 	myWidget->show();
 
 	return a.exec();
