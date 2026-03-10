@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Meshtastic seq heatmap (Leaflet)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body, #map { height: 100%; margin: 0; padding: 0; }
+    .panel {
+      position:absolute; top:12px; left:12px; z-index:9999;
+      background:#fff; padding:10px 12px; border-radius:10px;
+      box-shadow:0 6px 18px rgba(0,0,0,.18);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      font-size:14px;
+      max-width: 420px;
+    }
+    .panel button{ margin-right:8px; margin-top:6px; }
+    .muted{ font-size:12px; opacity:.75; margin-top:6px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="panel">
+    <div><b>Meshtastic seq heatmap</b></div>
+    <div id="stats"></div>
+    <button id="toggleHeat">Toggle heat</button>
+    <button id="toggleMarkers">Toggle markers</button>
+    <div class="muted">Tiles: OpenStreetMap (no API key). Intensity = seq.</div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+  <script>
+    const points = [
+      [63.4183200, 10.3993283, 1.000000],
+      [63.4183200, 10.3993283, 2.000000],
+      [63.4182916, 10.3991616, 3.000000],
+      [63.4182916, 10.3991616, 4.000000],
+      [63.4182916, 10.3991616, 5.000000],
+      [63.4183166, 10.3993083, 6.000000],
+      [63.4183166, 10.3993083, 7.000000],
+      [63.4183183, 10.3993616, 8.000000],
+      [63.4183183, 10.3993616, 9.000000],
+      [63.4182050, 10.3994983, 10.000000],
+      [63.4182050, 10.3994983, 11.000000],
+      [63.4182350, 10.3997683, 13.000000],
+      [63.4182350, 10.3997683, 14.000000],
+      [63.4183116, 10.4000216, 15.000000],
+      [63.4183116, 10.4000216, 16.000000],
+      [63.4183116, 10.4000216, 17.000000],
+      [63.4182616, 10.3998283, 18.000000],
+      [63.4182616, 10.3998283, 19.000000]
+    ];
+
+    const map = L.map("map").setView([63.4183200, 10.3993283], 17);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 20,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    const heat = L.heatLayer(points, {
+      radius: 28,
+      blur: 20,
+      maxZoom: 20
+    }).addTo(map);
+
+    const markerGroup = L.layerGroup().addTo(map);
+    L.circleMarker([63.4183200, 10.3993283], {radius:4, weight:1})
+        .bindTooltip("seq 1" + (true ? " | snr 10.75" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4183200, 10.3993283], {radius:4, weight:1})
+        .bindTooltip("seq 2" + (true ? " | snr 12.0" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4182916, 10.3991616], {radius:4, weight:1})
+        .bindTooltip("seq 3" + (true ? " | snr 11.25" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4182916, 10.3991616], {radius:4, weight:1})
+        .bindTooltip("seq 4" + (true ? " | snr 11.0" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4182916, 10.3991616], {radius:4, weight:1})
+        .bindTooltip("seq 5" + (true ? " | snr 11.5" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4183166, 10.3993083], {radius:4, weight:1})
+        .bindTooltip("seq 6" + (true ? " | snr 10.5" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4183166, 10.3993083], {radius:4, weight:1})
+        .bindTooltip("seq 7" + (true ? " | snr 11.25" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4183183, 10.3993616], {radius:4, weight:1})
+        .bindTooltip("seq 8" + (true ? " | snr 8.75" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4183183, 10.3993616], {radius:4, weight:1})
+        .bindTooltip("seq 9" + (true ? " | snr 10.25" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4182050, 10.3994983], {radius:4, weight:1})
+        .bindTooltip("seq 10" + (true ? " | snr 11.25" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4182050, 10.3994983], {radius:4, weight:1})
+        .bindTooltip("seq 11" + (true ? " | snr 10.5" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4182350, 10.3997683], {radius:4, weight:1})
+        .bindTooltip("seq 13" + (true ? " | snr 7.5" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4182350, 10.3997683], {radius:4, weight:1})
+        .bindTooltip("seq 14" + (true ? " | snr 5.5" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4183116, 10.4000216], {radius:4, weight:1})
+        .bindTooltip("seq 15" + (true ? " | snr 6.75" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4183116, 10.4000216], {radius:4, weight:1})
+        .bindTooltip("seq 16" + (true ? " | snr 8.25" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4183116, 10.4000216], {radius:4, weight:1})
+        .bindTooltip("seq 17" + (true ? " | snr 12.25" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4182616, 10.3998283], {radius:4, weight:1})
+        .bindTooltip("seq 18" + (true ? " | snr 11.75" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+      L.circleMarker([63.4182616, 10.3998283], {radius:4, weight:1})
+        .bindTooltip("seq 19" + (true ? " | snr 12.25" : ""), {direction:"top", offset:[0,-6]})
+        .addTo(markerGroup);
+
+    // Fit bounds
+    if (points.length >= 2) {
+      const bounds = L.latLngBounds(points.map(p => [p[0], p[1]]));
+      map.fitBounds(bounds, { padding: [25, 25] });
+    }
+
+    document.getElementById("stats").textContent =
+      `${points.length} seq-points`;
+
+    let heatOn = true;
+    let markersOn = true;
+
+    document.getElementById("toggleHeat").onclick = () => {
+      heatOn = !heatOn;
+      if (heatOn) heat.addTo(map); else map.removeLayer(heat);
+    };
+
+    document.getElementById("toggleMarkers").onclick = () => {
+      markersOn = !markersOn;
+      if (markersOn) markerGroup.addTo(map); else map.removeLayer(markerGroup);
+    };
+  </script>
+</body>
+</html>

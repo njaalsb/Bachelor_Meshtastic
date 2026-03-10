@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <title>TX→RX heat layer (seq only) - Leaflet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body, #map { height: 100%; margin: 0; padding: 0; }
+    .panel{
+      position:absolute; top:12px; left:12px; z-index:9999;
+      background:#fff; padding:10px 12px; border-radius:10px;
+      box-shadow:0 6px 18px rgba(0,0,0,.18);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      font-size:14px; max-width: 520px;
+    }
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .muted{ font-size:12px; opacity:.75; margin-top:6px; }
+    .legend{
+      margin-top:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+      font-size:12px;
+    }
+    .bar{
+      width: 220px; height: 10px; border-radius: 999px; border: 1px solid rgba(0,0,0,.15);
+      background: linear-gradient(90deg, #d73027 0%, #fee08b 50%, #1a9850 100%);
+    }
+    label { font-size: 12px; opacity: .85; }
+    input[type="range"]{ width: 160px; }
+    button{ cursor:pointer; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <div class="panel">
+    <div style="font-weight:700;">TX→RX heat layer (SNR) — kun seq N</div>
+
+    <div class="row" style="margin-top:8px;">
+      <input id="file" type="file" accept=".csv,text/csv" />
+      <button id="clearTx" disabled>Fjern TX</button>
+      <button id="clearHeat" disabled>Fjern heat</button>
+    </div>
+
+    <div class="row" style="margin-top:8px;">
+      <label>Radius</label><input id="radius" type="range" min="10" max="60" value="28" />
+      <span id="radiusVal">28</span>
+      <label>Blur</label><input id="blur" type="range" min="5" max="45" value="20" />
+      <span id="blurVal">20</span>
+      <label>Step (m)</label><input id="stepm" type="range" min="1" max="10" value="3" />
+      <span id="stepmVal">3</span>
+    </div>
+
+    <div id="status" style="margin-top:8px;"></div>
+
+    <div class="legend">
+      <div class="bar"></div>
+      <div><span id="snrMin">–</span> dB</div>
+      <div style="opacity:.7;">→</div>
+      <div><span id="snrMax">–</span> dB</div>
+    </div>
+
+    <div class="muted">
+      1) Velg CSV  2) Klikk på kartet for TX  3) Heat lages ved å “spre” punkter langs TX→RX-linjene med intensitet fra SNR.
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+  <script>
+    // --- Map ---
+    const map = L.map("map").setView([63.41835, 10.39945], 16);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 20,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    const rxDotLayer = L.layerGroup().addTo(map);
+
+    let heatLayer = null;
+    let txMarker = null;
+
+    let seqPoints = []; // {lat, lon, snr, seq, time}
+    let snrMin = null, snrMax = null;
+
+    // UI
+    const elStatus = document.getElementById("status");
+    const elSMin = document.getElementById("snrMin");
+    const elSMax = document.getElementById("snrMax");
+    const btnClearTx = document.getElementById("clearTx");
+    const btnClearHeat = document.getElementById("clearHeat");
+
+    const elRadius = document.getElementById("radius");
+    const elBlur   = document.getElementById("blur");
+    const elStepm  = document.getElementById("stepm");
+    const elRadiusVal = document.getElementById("radiusVal");
+    const elBlurVal   = document.getElementById("blurVal");
+    const elStepmVal  = document.getElementById("stepmVal");
+
+    function setStatus(html){ elStatus.innerHTML = html; }
+
+    // --- Helpers ---
+    function parseCsv(text) {
+      const lines = text.trim().split(/\r?\n/);
+      if (lines.length < 2) return [];
+      const header = lines[0].split(",").map(s => s.trim());
+      const rows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(",");
+        const r = {};
+        for (let j = 0; j < header.length; j++) r[header[j]] = (cols[j] ?? "").trim();
+        rows.push(r);
+      }
+      return rows;
+    }
+
+    function toNum(x) {
+      const n = Number((x ?? "").trim());
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function parseSeq(payload) {
+      const m = (payload ?? "").trim().match(/^seq\s+(\d+)\s*$/i);
+      return m ? Number(m[1]) : null;
+    }
+
+    // Haversine distance (meters)
+    function haversineMeters(aLat, aLon, bLat, bLon) {
+      const R = 6371000;
+      const toRad = d => d * Math.PI / 180;
+      const dLat = toRad(bLat - aLat);
+      const dLon = toRad(bLon - aLon);
+      const lat1 = toRad(aLat);
+      const lat2 = toRad(bLat);
+      const s = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+      return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+    }
+
+    function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+
+    function snrToIntensity(snr){
+      if (snrMin === null || snrMax === null) return 0.5;
+      if (snrMax === snrMin) return 0.5;
+      return clamp01((snr - snrMin) / (snrMax - snrMin));
+    }
+
+    // --- Heat building ---
+    function clearHeat(){
+      if (heatLayer) map.removeLayer(heatLayer);
+      heatLayer = null;
+      btnClearHeat.disabled = true;
+    }
+
+    function clearTx(){
+      if (txMarker) map.removeLayer(txMarker);
+      txMarker = null;
+      btnClearTx.disabled = true;
+      clearHeat();
+      if (seqPoints.length) {
+        setStatus(`CSV lastet (${seqPoints.length} seq-punkter). Klikk på kartet for å sette TX.`);
+      } else {
+        setStatus(`Last inn CSV først (kun seq N-rader brukes).`);
+      }
+    }
+
+    function buildHeatFromTx(){
+      if (!txMarker || seqPoints.length === 0) return;
+
+      clearHeat();
+
+      const tx = txMarker.getLatLng();
+      const stepMeters = Number(elStepm.value);
+
+      // Build many heat points along each TX->RX segment
+      // Format for leaflet.heat: [lat, lon, intensity 0..1]
+      const heatPts = [];
+
+      for (const p of seqPoints) {
+        const d = haversineMeters(tx.lat, tx.lng, p.lat, p.lon);
+        const steps = Math.max(2, Math.ceil(d / stepMeters)); // at least 2 points
+        const intensity = snrToIntensity(p.snr);
+
+        for (let i = 0; i <= steps; i++) {
+          const t = i / steps;
+          const lat = tx.lat + (p.lat - tx.lat) * t;
+          const lon = tx.lng + (p.lon - tx.lng) * t;
+
+          // Optional: slight taper so RX end shows stronger “blob”
+          // comment out next line if you want perfectly uniform
+          const taper = 0.35 + 0.65 * t; // 0.35 near TX -> 1.0 near RX
+          heatPts.push([lat, lon, intensity * taper]);
+        }
+      }
+
+      heatLayer = L.heatLayer(heatPts, {
+        radius: Number(elRadius.value),
+        blur: Number(elBlur.value),
+        maxZoom: 20
+      }).addTo(map);
+
+      btnClearHeat.disabled = false;
+
+      setStatus(
+        `TX satt. Genererte heat fra <b>${seqPoints.length}</b> seq-målinger → ` +
+        `<b>${heatPts.length}</b> heatpunkter (step ${stepMeters} m).`
+      );
+    }
+
+    // --- File loader (SEQ ONLY) ---
+    document.getElementById("file").addEventListener("change", async (e) => {
+      const f = e.target.files?.[0];
+      if (!f) return;
+
+      const text = await f.text();
+      const rows = parseCsv(text);
+
+      const pts = [];
+      let min = +Infinity, max = -Infinity;
+
+      for (const r of rows) {
+        const seq = parseSeq(r["payload"]);
+        if (seq === null) continue; // only seq
+
+        const lat = toNum(r["rx lat"]);
+        const lon = toNum(r["rx long"]);
+        const snr = toNum(r["rx snr"]);
+        if (lat === null || lon === null || snr === null) continue;
+
+        min = Math.min(min, snr);
+        max = Math.max(max, snr);
+
+        pts.push({
+          lat, lon, snr, seq,
+          time: `${r["date"] ?? ""} ${r["time"] ?? ""}`.trim()
+        });
+      }
+
+      pts.sort((a,b) => a.seq - b.seq);
+      seqPoints = pts;
+      snrMin = (min === +Infinity) ? null : min;
+      snrMax = (max === -Infinity) ? null : max;
+
+      rxDotLayer.clearLayers();
+      clearHeat();
+      clearTx();
+
+      if (!seqPoints.length) {
+        elSMin.textContent = "–";
+        elSMax.textContent = "–";
+        setStatus(`Fant ingen gyldige 'seq N'-rader med rx lat/rx long og rx snr.`);
+        return;
+      }
+
+      // show RX dots (colored by intensity via traffic-light mapping in legend only; dots keep simple)
+      for (const p of seqPoints) {
+        L.circleMarker([p.lat, p.lon], { radius: 3, weight: 1, fillOpacity: 0.9 })
+          .bindTooltip(`seq ${p.seq} | SNR ${p.snr.toFixed(2)} dB`, { direction:"top", offset:[0,-6] })
+          .addTo(rxDotLayer);
+      }
+
+      // fit bounds
+      if (seqPoints.length >= 2) {
+        map.fitBounds(L.latLngBounds(seqPoints.map(p => [p.lat, p.lon])), { padding:[30,30] });
+      } else {
+        map.setView([seqPoints[0].lat, seqPoints[0].lon], 18);
+      }
+
+      elSMin.textContent = snrMin.toFixed(2);
+      elSMax.textContent = snrMax.toFixed(2);
+
+      setStatus(
+        `CSV lastet: <b>${seqPoints.length}</b> seq-punkter. ` +
+        `SNR: <b>${snrMin.toFixed(2)}</b> til <b>${snrMax.toFixed(2)}</b> dB. ` +
+        `Klikk på kartet for å sette TX.`
+      );
+    });
+
+    // --- Click to set TX ---
+    map.on("click", (ev) => {
+      if (seqPoints.length === 0) { setStatus("Last inn CSV først."); return; }
+
+      if (!txMarker) {
+        txMarker = L.marker(ev.latlng, { draggable:true }).addTo(map);
+        txMarker.bindTooltip("TX (sender) – dra meg", { permanent:true, direction:"top", offset:[0,-10] }).openTooltip();
+        txMarker.on("dragend", buildHeatFromTx);
+      } else {
+        txMarker.setLatLng(ev.latlng);
+      }
+
+      btnClearTx.disabled = false;
+      buildHeatFromTx();
+    });
+
+    // --- Controls ---
+    function syncLabels(){
+      elRadiusVal.textContent = elRadius.value;
+      elBlurVal.textContent = elBlur.value;
+      elStepmVal.textContent = elStepm.value;
+    }
+    [elRadius, elBlur, elStepm].forEach(el => el.addEventListener("input", () => {
+      syncLabels();
+      // live update if TX exists
+      if (txMarker) buildHeatFromTx();
+    }));
+    syncLabels();
+
+    btnClearTx.addEventListener("click", clearTx);
+    btnClearHeat.addEventListener("click", clearHeat);
+
+    clearTx();
+  </script>
+</body>
+</html>
