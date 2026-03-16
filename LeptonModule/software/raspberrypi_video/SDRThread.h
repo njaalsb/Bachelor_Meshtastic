@@ -19,14 +19,15 @@ public:
     void run();
 
 signals:
-    void strongSignal();
+    void signalUpdate(float maxPower);
 
 private:
     uint32_t frequency;
     float threshold;
     bool running;
     rtlsdr_dev *dev;
-};
+    float maxPower;
+    int counter;
 };
 
 #endif // SDRTHREAD_H

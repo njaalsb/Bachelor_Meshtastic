@@ -51,7 +51,7 @@ int main( int argc, char **argv )
 	int rangeMin = -1; //
 	int rangeMax = -1; //
 	int loglevel = 0;
-	bool sdrEnable = false;
+	bool sdrEnable = true;
 	uint32_t sdrFreq = 869525000; // 100 MHz
 	float sdrThresh = 10000.0f;
 	for(int i=1; i < argc; i++) {
@@ -163,8 +163,9 @@ int main( int argc, char **argv )
 		SDRThread *sdrThread = new SDRThread();
 		sdrThread->setFrequency(sdrFreq);
 		sdrThread->setThreshold(sdrThresh);
-		QObject::connect(sdrThread, &SDRThread::strongSignal, [&]() {
-			MeshtasticHelper::sendMessage("Strong SDR signal detected");
+		QObject::connect(sdrThread, &SDRThread::signalUpdate, [&](float power) {
+			QString msg = QString("Highest SDR signal in last 30s: %1").arg(power);
+			MeshtasticHelper::sendMessage(msg.toStdString().c_str());
 		});
 		sdrThread->start();
 	}
