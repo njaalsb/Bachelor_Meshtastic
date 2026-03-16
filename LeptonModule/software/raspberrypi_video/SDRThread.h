@@ -27,6 +27,6 @@ private:
     bool running;
     rtlsdr_dev *dev;
 };
-};
+
 
 #endif // SDRTHREAD_H
