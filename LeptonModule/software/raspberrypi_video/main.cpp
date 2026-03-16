@@ -4,13 +4,12 @@
 #include <QMessageBox>
 
 #include <QColor>
-#include <QLabel>
 #include <QtDebug>
 #include <QString>
-#include <QPushButton>
+#include <QTimer>
+#include <QDateTime>
 
 #include "LeptonThread.h"
-#include "MyLabel.h"
 #include "MeshtasticHelper.h"
 #include "SDRThread.h"
 
@@ -120,31 +119,9 @@ int main( int argc, char **argv )
 	//create the app
 	QApplication a( argc, argv );
 	
-	QWidget *myWidget = new QWidget;
-	myWidget->setGeometry(400, 300, 340, 290);
-
-	//create an image placeholder for myLabel
-	//fill the top left corner with red, just bcuz
-	QImage myImage;
-	myImage = QImage(320, 240, QImage::Format_RGB888);
-	QRgb red = qRgb(255,0,0);
-	for(int i=0;i<80;i++) {
-		for(int j=0;j<60;j++) {
-			myImage.setPixel(i, j, red);
-		}
-	}
-
-	//create a label, and set it's image to the placeholder
-	MyLabel myLabel(myWidget);
-	myLabel.setGeometry(10, 10, 320, 240);
-	myLabel.setPixmap(QPixmap::fromImage(myImage));
-
-	//create a FFC button
-	QPushButton *button1 = new QPushButton("Perform FFC", myWidget);
-	button1->setGeometry(320/2-50, 290-35, 100, 30);
+	QImage lastImage;
 
 	//create a thread to gather SPI data
-	//when the thread emits updateImage, the label should update its image accordingly
 	LeptonThread *thread = new LeptonThread();
 	thread->setLogLevel(loglevel);
 	thread->useColormap(typeColormap);
@@ -153,11 +130,23 @@ int main( int argc, char **argv )
 	thread->setAutomaticScalingRange();
 	if (0 <= rangeMin) thread->useRangeMinValue(rangeMin);
 	if (0 <= rangeMax) thread->useRangeMaxValue(rangeMax);
-	QObject::connect(thread, SIGNAL(updateImage(QImage)), &myLabel, SLOT(setImage(QImage)));
+	QObject::connect(thread, &LeptonThread::updateImage, [&](QImage image) {
+		lastImage = image;
+	});
 	
 	//connect ffc button to the thread's ffc action
-	QObject::connect(button1, SIGNAL(clicked()), thread, SLOT(performFFC()));
+	// Note: FFC not available in headless mode
+	// QObject::connect(button1, SIGNAL(clicked()), thread, SLOT(performFFC()));
 	thread->start();
+	
+	QTimer *saveTimer = new QTimer();
+	QObject::connect(saveTimer, &QTimer::timeout, [&]() {
+		if (!lastImage.isNull()) {
+			QString filename = QString("thermal_%1.png").arg(QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss"));
+			lastImage.save(filename);
+		}
+	});
+	saveTimer->start(30000); // 30 seconds
 	
 	if (sdrEnable) {
 		SDRThread *sdrThread = new SDRThread();
@@ -170,10 +159,6 @@ int main( int argc, char **argv )
 		sdrThread->start();
 	}
 	
-	MeshtasticHelper::sendMessage("Wowowowowow");
-
-	myWidget->show();
-
 	return a.exec();
 }
 
