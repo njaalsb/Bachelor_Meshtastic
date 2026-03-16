@@ -12,6 +12,7 @@
 #include "LeptonThread.h"
 #include "MyLabel.h"
 #include "MeshtasticHelper.h"
+#include "SDRThread.h"
 
 void printUsage(char *cmd) {
         char *cmdname = basename(cmd);
@@ -35,6 +36,9 @@ void printUsage(char *cmd) {
                "           [default] automatic scaling range adjustment\n"
                "           e.g. -max 32000\n"
                " -d x    log level (0-255)\n"
+               " -sdr_enable  enable SDR monitoring\n"
+               " -sdr_freq x  SDR center frequency in Hz [default 100000000]\n"
+               " -sdr_thresh x  SDR signal threshold [default 10000.0]\n"
                "", cmdname, cmdname);
 	return;
 }
@@ -47,6 +51,9 @@ int main( int argc, char **argv )
 	int rangeMin = -1; //
 	int rangeMax = -1; //
 	int loglevel = 0;
+	bool sdrEnable = false;
+	uint32_t sdrFreq = 869525000; // 100 MHz
+	float sdrThresh = 10000.0f;
 	for(int i=1; i < argc; i++) {
 		if (strcmp(argv[i], "-h") == 0) {
 			printUsage(argv[0]);
@@ -97,6 +104,17 @@ int main( int argc, char **argv )
 				i++;
 			}
 		}
+		else if (strcmp(argv[i], "-sdr_enable") == 0) {
+			sdrEnable = true;
+		}
+		else if ((strcmp(argv[i], "-sdr_freq") == 0) && (i + 1 != argc)) {
+			sdrFreq = (uint32_t)std::atoi(argv[i + 1]);
+			i++;
+		}
+		else if ((strcmp(argv[i], "-sdr_thresh") == 0) && (i + 1 != argc)) {
+			sdrThresh = std::atof(argv[i + 1]);
+			i++;
+		}
 	}
 
 	//create the app
@@ -140,6 +158,16 @@ int main( int argc, char **argv )
 	//connect ffc button to the thread's ffc action
 	QObject::connect(button1, SIGNAL(clicked()), thread, SLOT(performFFC()));
 	thread->start();
+	
+	if (sdrEnable) {
+		SDRThread *sdrThread = new SDRThread();
+		sdrThread->setFrequency(sdrFreq);
+		sdrThread->setThreshold(sdrThresh);
+		QObject::connect(sdrThread, &SDRThread::strongSignal, [&]() {
+			MeshtasticHelper::sendMessage("Strong SDR signal detected");
+		});
+		sdrThread->start();
+	}
 	
 	MeshtasticHelper::sendMessage("Wowowowowow");
 
