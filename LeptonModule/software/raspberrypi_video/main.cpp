@@ -8,6 +8,9 @@
 #include <QString>
 #include <QTimer>
 #include <QDateTime>
+#include <QBuffer>
+#include <QRandomGenerator>
+#include <QtEndian>
 
 #include "LeptonThread.h"
 #include "MeshtasticHelper.h"
@@ -50,7 +53,7 @@ int main( int argc, char **argv )
 	int rangeMin = -1; //
 	int rangeMax = -1; //
 	int loglevel = 0;
-	bool sdrEnable = true;
+	bool sdrEnable = false;
 	uint32_t sdrFreq = 869525000; // 100 MHz
 	float sdrThresh = 10000.0f;
 	for(int i=1; i < argc; i++) {
@@ -142,8 +145,53 @@ int main( int argc, char **argv )
 	QTimer *saveTimer = new QTimer();
 	QObject::connect(saveTimer, &QTimer::timeout, [&]() {
 		if (!lastImage.isNull()) {
-			QString filename = QString("thermal_%1.png").arg(QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss"));
-			lastImage.save(filename);
+			qDebug() << "Sending image";
+			// Convert to grayscale
+			QImage grayImage = lastImage.convertToFormat(QImage::Format_Grayscale8);
+			
+			// Save to buffer as JPG
+			QByteArray buffer;
+			QBuffer buf(&buffer);
+			buf.open(QIODevice::WriteOnly);
+			grayImage.save(&buf, "JPG", 50); // quality 50 for compression
+			buf.close();
+			
+			// Base64 encode
+			QByteArray b64 = buffer.toBase64();
+			
+			// Chunkify
+			int maxPayload = 80;
+			int total = (b64.size() + maxPayload - 1) / maxPayload;
+			quint8 sid = QRandomGenerator::global()->bounded(1, 256);
+			
+			qDebug() << "Total chunks:" << total << "sid:" << sid;
+			for(int idx = 0; idx < total; idx++) {
+				QByteArray payload = b64.mid(idx * maxPayload, maxPayload);
+				
+				// Header: >BHHH big endian: sid (uint8), total (uint16), idx (uint16), len(payload) (uint16) - 7 bytes
+				QByteArray header(7, 0);
+				header[0] = (char)sid;
+				qToBigEndian((quint16)total, (uchar*)header.data() + 1);
+				qToBigEndian((quint16)idx, (uchar*)header.data() + 3);
+				qToBigEndian((quint16)payload.size(), (uchar*)header.data() + 5);
+				
+				QByteArray packet = header + payload;
+				QByteArray packetB64 = packet.toBase64();
+				
+				QString msg = QString("IMG|%1|%2|%3").arg(sid).arg(idx).arg(QString(packetB64));
+				MeshtasticHelper::sendMessage(msg.toStdString().c_str());
+				qDebug() << "Sent chunk" << idx;
+				
+				// Delay 15s
+				QThread::msleep(15000);
+			}
+			
+			// Also save to file
+			QString filename = QString("thermal_%1.jpg").arg(QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss"));
+			grayImage.save(filename);
+			qDebug() << "Saved file:" << filename;
+		} else {
+			qDebug() << "No image to send";
 		}
 	});
 	saveTimer->start(30000); // 30 seconds
@@ -152,13 +200,15 @@ int main( int argc, char **argv )
 		SDRThread *sdrThread = new SDRThread();
 		sdrThread->setFrequency(sdrFreq);
 		sdrThread->setThreshold(sdrThresh);
-		QObject::connect(sdrThread, &SDRThread::signalUpdate, [&](float power) {
-			QString msg = QString("Highest SDR signal in last 30s: %1").arg(power);
-			MeshtasticHelper::sendMessage(msg.toStdString().c_str());
-		});
+		// QObject::connect(sdrThread, &SDRThread::signalUpdate, [&](float power) {
+		// 	QString msg = QString("Highest SDR signal in last 30s: %1").arg(power);
+		// 	MeshtasticHelper::sendMessage(msg.toStdString().c_str());
+		// });
 		sdrThread->start();
 	}
 	
+	MeshtasticHelper::sendMessage("test");
+
 	return a.exec();
 }
 

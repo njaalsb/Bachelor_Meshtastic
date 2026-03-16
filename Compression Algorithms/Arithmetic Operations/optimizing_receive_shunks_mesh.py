@@ -88,7 +88,7 @@ def on_receive(packet, interface):
         if rebuilt is not None:
             ts = time.strftime("%Y%m%d_%H%M%S")
             stem = f"received_{ts}_msg{msg_id}"
-            out_path = unique_path(out_dir, stem, ".webp")
+            out_path = unique_path(out_dir, stem, ".jpg")
             out_path.write_bytes(rebuilt)
             print(f"\n✅ Ferdig bilde! Lagret: {out_path.resolve()} ({len(rebuilt)} bytes)\n")
 
