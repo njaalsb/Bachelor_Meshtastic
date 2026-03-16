@@ -1,23 +1,21 @@
 #!/usr/bin/env python3
 """
-Simple helper: open the first Meshtastic interface and send a text packet.
+Simple helper: use Meshtastic CLI to send a text packet.
 Usage:    meshtastic_notify.py "your message here"
-Optionally you may pipe a JSON object with a “message” field on stdin.
 """
 import sys
-import json
-import meshtastic.serial_interface
+import subprocess
 
 def send_alert(msg):
-    iface = meshtastic.serial_interface.SerialInterface()
-    iface.sendText(msg)
+    result = subprocess.run(["/home/meshtastic/meshtastic-venv/bin/meshtastic", "--sendtext", msg, "--channel", "0"], capture_output=True, text=True, timeout=10)
+    print(f"Return code: {result.returncode}")
+    print(f"Stdout: {result.stdout}")
+    print(f"Stderr: {result.stderr}")
+    if result.returncode != 0:
+        print(f"Error: {result.stderr}", file=sys.stderr)
+    else:
+        print(f"Sent: {msg}")
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         send_alert(" ".join(sys.argv[1:]))
-    else:
-        try:
-            data = json.load(sys.stdin)
-            send_alert(data.get("message",""))
-        except Exception:
-            pass

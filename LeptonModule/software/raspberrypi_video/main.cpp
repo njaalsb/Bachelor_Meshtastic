@@ -4,13 +4,15 @@
 #include <QMessageBox>
 
 #include <QColor>
-#include <QLabel>
 #include <QtDebug>
 #include <QString>
-#include <QPushButton>
+#include <QTimer>
+#include <QDateTime>
+#include <QBuffer>
+#include <QRandomGenerator>
+#include <QtEndian>
 
 #include "LeptonThread.h"
-#include "MyLabel.h"
 #include "MeshtasticHelper.h"
 #include "SDRThread.h"
 
@@ -120,31 +122,9 @@ int main( int argc, char **argv )
 	//create the app
 	QApplication a( argc, argv );
 	
-	QWidget *myWidget = new QWidget;
-	myWidget->setGeometry(400, 300, 340, 290);
-
-	//create an image placeholder for myLabel
-	//fill the top left corner with red, just bcuz
-	QImage myImage;
-	myImage = QImage(320, 240, QImage::Format_RGB888);
-	QRgb red = qRgb(255,0,0);
-	for(int i=0;i<80;i++) {
-		for(int j=0;j<60;j++) {
-			myImage.setPixel(i, j, red);
-		}
-	}
-
-	//create a label, and set it's image to the placeholder
-	MyLabel myLabel(myWidget);
-	myLabel.setGeometry(10, 10, 320, 240);
-	myLabel.setPixmap(QPixmap::fromImage(myImage));
-
-	//create a FFC button
-	QPushButton *button1 = new QPushButton("Perform FFC", myWidget);
-	button1->setGeometry(320/2-50, 290-35, 100, 30);
+	QImage lastImage;
 
 	//create a thread to gather SPI data
-	//when the thread emits updateImage, the label should update its image accordingly
 	LeptonThread *thread = new LeptonThread();
 	thread->setLogLevel(loglevel);
 	thread->useColormap(typeColormap);
@@ -153,25 +133,81 @@ int main( int argc, char **argv )
 	thread->setAutomaticScalingRange();
 	if (0 <= rangeMin) thread->useRangeMinValue(rangeMin);
 	if (0 <= rangeMax) thread->useRangeMaxValue(rangeMax);
-	QObject::connect(thread, SIGNAL(updateImage(QImage)), &myLabel, SLOT(setImage(QImage)));
+	QObject::connect(thread, &LeptonThread::updateImage, [&](QImage image) {
+		lastImage = image;
+	});
 	
 	//connect ffc button to the thread's ffc action
-	QObject::connect(button1, SIGNAL(clicked()), thread, SLOT(performFFC()));
+	// Note: FFC not available in headless mode
+	// QObject::connect(button1, SIGNAL(clicked()), thread, SLOT(performFFC()));
 	thread->start();
+	
+	QTimer *saveTimer = new QTimer();
+	QObject::connect(saveTimer, &QTimer::timeout, [&]() {
+		if (!lastImage.isNull()) {
+			qDebug() << "Sending image";
+			// Convert to grayscale
+			QImage grayImage = lastImage.convertToFormat(QImage::Format_Grayscale8);
+			
+			// Save to buffer as JPG
+			QByteArray buffer;
+			QBuffer buf(&buffer);
+			buf.open(QIODevice::WriteOnly);
+			grayImage.save(&buf, "JPG", 50); // quality 50 for compression
+			buf.close();
+			
+			// Base64 encode
+			QByteArray b64 = buffer.toBase64();
+			
+			// Chunkify
+			int maxPayload = 80;
+			int total = (b64.size() + maxPayload - 1) / maxPayload;
+			quint8 sid = QRandomGenerator::global()->bounded(1, 256);
+			
+			qDebug() << "Total chunks:" << total << "sid:" << sid;
+			for(int idx = 0; idx < total; idx++) {
+				QByteArray payload = b64.mid(idx * maxPayload, maxPayload);
+				
+				// Header: >BHHH big endian: sid (uint8), total (uint16), idx (uint16), len(payload) (uint16) - 7 bytes
+				QByteArray header(7, 0);
+				header[0] = (char)sid;
+				qToBigEndian((quint16)total, (uchar*)header.data() + 1);
+				qToBigEndian((quint16)idx, (uchar*)header.data() + 3);
+				qToBigEndian((quint16)payload.size(), (uchar*)header.data() + 5);
+				
+				QByteArray packet = header + payload;
+				QByteArray packetB64 = packet.toBase64();
+				
+				QString msg = QString("IMG|%1|%2|%3").arg(sid).arg(idx).arg(QString(packetB64));
+				MeshtasticHelper::sendMessage(msg.toStdString().c_str());
+				qDebug() << "Sent chunk" << idx;
+				
+				// Delay 15s
+				QThread::msleep(15000);
+			}
+			
+			// Also save to file
+			QString filename = QString("thermal_%1.jpg").arg(QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss"));
+			grayImage.save(filename);
+			qDebug() << "Saved file:" << filename;
+		} else {
+			qDebug() << "No image to send";
+		}
+	});
+	saveTimer->start(30000); // 30 seconds
 	
 	if (sdrEnable) {
 		SDRThread *sdrThread = new SDRThread();
 		sdrThread->setFrequency(sdrFreq);
 		sdrThread->setThreshold(sdrThresh);
-		QObject::connect(sdrThread, &SDRThread::strongSignal, [&]() {
-			MeshtasticHelper::sendMessage("Strong SDR signal detected");
-		});
+		// QObject::connect(sdrThread, &SDRThread::signalUpdate, [&](float power) {
+		// 	QString msg = QString("Highest SDR signal in last 30s: %1").arg(power);
+		// 	MeshtasticHelper::sendMessage(msg.toStdString().c_str());
+		// });
 		sdrThread->start();
 	}
 	
-	MeshtasticHelper::sendMessage("Wowowowowow");
-
-	myWidget->show();
+	MeshtasticHelper::sendMessage("test");
 
 	return a.exec();
 }

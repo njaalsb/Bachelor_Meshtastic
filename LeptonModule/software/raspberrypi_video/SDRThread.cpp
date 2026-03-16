@@ -10,6 +10,8 @@ SDRThread::SDRThread() : QThread()
     threshold = 10000.0f; // default threshold
     running = true;
     dev = NULL;
+    maxPower = 0.0f;
+    counter = 0;
 }
 
 SDRThread::~SDRThread() {
@@ -61,10 +63,12 @@ void SDRThread::run()
             }
             power /= (n_read / 2); // average power
 
-            if (power > threshold) {
-                emit strongSignal();
-                // Sleep to avoid spamming messages
-                sleep(5); // 5 seconds
+            maxPower = std::max(maxPower, power);
+            counter++;
+            if (counter >= 300) {
+                emit signalUpdate(maxPower);
+                maxPower = 0.0f;
+                counter = 0;
             }
         }
         usleep(100000); // 100ms delay
