@@ -1,21 +1,33 @@
 #!/usr/bin/env python3
-"""
-Simple helper: use Meshtastic CLI to send a text packet.
-Usage:    meshtastic_notify.py "your message here"
-"""
 import sys
-import subprocess
+import meshtastic.serial_interface
 
-def send_alert(msg):
-    result = subprocess.run(["/home/meshtastic/meshtastic-venv/bin/meshtastic", "--sendtext", msg, "--channel", "0"], capture_output=True, text=True, timeout=10)
-    print(f"Return code: {result.returncode}")
-    print(f"Stdout: {result.stdout}")
-    print(f"Stderr: {result.stderr}")
-    if result.returncode != 0:
-        print(f"Error: {result.stderr}", file=sys.stderr)
-    else:
-        print(f"Sent: {msg}")
+def main():
+    print("Starting Meshtastic Bridge...", file=sys.stderr)
+    try:
+        # Initialize the radio connection ONCE
+        interface = meshtastic.serial_interface.SerialInterface(devPath='/dev/ttyACM0')
+        print("Connected to Radio. Ready for messages.", file=sys.stderr)
+    except Exception as e:
+        print(f"FATAL: Could not connect to radio: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Listen to stdin (fed by the C++ QProcess)
+    try:
+        for line in sys.stdin:
+            msg = line.strip()
+            if msg:
+                try:
+                    # Send to channel 0
+                    interface.sendText(msg, wantAck=True)
+                    print(f"Sent: {msg[:30]}...", file=sys.stderr)
+                    sys.stderr.flush()
+                except Exception as e:
+                    print(f"Error sending message: {e}", file=sys.stderr)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        interface.close()
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        send_alert(" ".join(sys.argv[1:]))
+    main()

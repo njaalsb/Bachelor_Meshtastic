@@ -1,27 +1,40 @@
 #include "MeshtasticHelper.h"
-#include <QProcess>
 #include <QDebug>
 
-void MeshtasticHelper::sendMessage(const QString &text)
-{
-    qDebug() << "Sending Meshtastic message:" << text;
-    // adjust path if you placed the script elsewhere
-    const QString script = QStringLiteral("meshtastic_notify.py");
+MeshtasticHelper& MeshtasticHelper::instance() {
+    static MeshtasticHelper inst;
+    return inst;
+}
 
-    QProcess proc;
-    proc.start(QStringLiteral("python3"),
-               QStringList{script, text});
-    if (!proc.waitForFinished(5000)) { // 5‑second timeout
-        qWarning("Meshtastic helper timed out");
-        proc.kill();
+MeshtasticHelper::MeshtasticHelper(QObject *parent) : QObject(parent) {
+    startBridge();
+}
+
+MeshtasticHelper::~MeshtasticHelper() {
+    if (m_process.state() == QProcess::Running) {
+        m_process.terminate();
+        m_process.waitForFinished(2000);
     }
-    qDebug() << "Meshtastic process exit code:" << proc.exitCode();
-    QByteArray err = proc.readAllStandardError();
-    if (!err.isEmpty()) {
-        qDebug() << "Meshtastic stderr:" << err;
+}
+
+void MeshtasticHelper::startBridge() {
+    qDebug() << "Starting Meshtastic Bridge process...";
+    // Ensure the path to your python script is correct
+    m_process.start("python3", QStringList() << "meshtastic_notify.py");
+    
+    if (!m_process.waitForStarted()) {
+        qCritical() << "Failed to start Meshtastic bridge!";
     }
-    QByteArray out = proc.readAllStandardOutput();
-    if (!out.isEmpty()) {
-        qDebug() << "Meshtastic stdout:" << out;
+}
+
+void MeshtasticHelper::sendMessage(const QString &text) {
+    if (m_process.state() != QProcess::Running) {
+        qWarning() << "Bridge not running, attempting restart...";
+        startBridge();
     }
+
+    // Write the message to the Python script's stdin followed by a newline
+    m_process.write(text.toUtf8() + "\n");
+    m_process.waitForBytesWritten(); 
+    qDebug() << "Message queued to bridge:" << text.left(20) << "...";
 }
