@@ -45,7 +45,7 @@ void printUsage(char *cmd) {
 
 int main( int argc, char **argv )
 {
-    int typeColormap = 3; // Default to Ironblack for proper thermal look
+    int typeColormap = 3; 
     int typeLepton = 2; 
     int spiSpeed = 20; 
     int rangeMin = -1; 
@@ -133,7 +133,7 @@ int main( int argc, char **argv )
             lastImage.save(&buf, "WEBP", 40); 
             buf.close();
             
-            int maxPayload = 200; 
+            int maxPayload = 150; 
             int total = (buffer.size() + maxPayload - 1) / maxPayload;
             quint8 sid = QRandomGenerator::global()->bounded(1, 256);
             
