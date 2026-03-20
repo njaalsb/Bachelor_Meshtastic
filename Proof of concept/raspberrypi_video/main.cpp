@@ -158,7 +158,7 @@ int main( int argc, char **argv )
                 MeshtasticHelper::instance().sendMessage(msg);
                 
                 qDebug() << "Sent chunk" << idx << "/" << (total-1);
-                QThread::msleep(15000); 
+                QThread::msleep(7000); 
             }
             
             // Save a high-quality color backup locally
