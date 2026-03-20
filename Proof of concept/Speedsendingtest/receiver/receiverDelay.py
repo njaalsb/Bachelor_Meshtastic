@@ -8,7 +8,6 @@ from pubsub import pub
 import time
 
 # Configuration
-DEV_PATH = '/dev/ttyACM0'  # Change if your receiver is on a different port
 CSV_FILE = 'meshtastic_test_results.csv'
 
 # State tracking
@@ -22,22 +21,20 @@ def on_receive(packet, interface):
     try:
         if 'decoded' in packet and packet['decoded']['portnum'] == 'TEXT_MESSAGE_APP':
             message = packet['decoded']['text']
+            # Calculate actual received size
+            msg_size = len(message.encode('utf-8')) 
             
-            # Use regex to find the number in "Test Packet X/100"
             match = re.search(r'Packet (\d+)/', message)
             if match:
                 current_seq = int(match.group(1))
                 received_count += 1
                 
-                # Check for gaps (Missing Packets)
-                # If current_seq is more than 1 higher than last_seq, we missed some
-                if last_seq != 0 and current_seq > last_seq + 1:
-                    for missing in range(last_seq + 1, current_seq):
-                        print(f"--- Packet {missing} MISSING ---")
-                        results.append([missing, "NA", "LOST"])
+
+                # Updated print to show byte size
+                print(f"Received: {current_seq} | Size: {msg_size} bytes | RSSI: {packet.get('rxRssi', 'N/A')}")
                 
-                print(f"Received: {message} (RSSI: {packet.get('rxRssi', 'N/A')} dBm)")
-                results.append([current_seq, message, packet.get('rxRssi', 'N/A')])
+                # Save as before
+                results.append([current_seq, "SUCCESS", packet.get('rxRssi', 'N/A')])
                 last_seq = current_seq
 
     except Exception as e:
@@ -60,10 +57,10 @@ def signal_handler(sig, frame):
 
 # Setup Listener
 signal.signal(signal.SIGINT, signal_handler)
-interface = meshtastic.serial_interface.SerialInterface(devPath=DEV_PATH)
+interface = meshtastic.serial_interface.SerialInterface()
 pub.subscribe(on_receive, "meshtastic.receive")
 
-print(f"Listening for packets on {DEV_PATH}... Press Ctrl+C to stop.")
+print(f"Listening for packets")
 
 # Keep the script running
 while True:
