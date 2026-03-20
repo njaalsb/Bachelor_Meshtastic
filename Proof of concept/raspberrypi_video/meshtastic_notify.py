@@ -5,14 +5,13 @@ import meshtastic.serial_interface
 def main():
     print("Starting Meshtastic Bridge...", file=sys.stderr)
     try:
-        # Initialize the radio connection ONCE
         interface = meshtastic.serial_interface.SerialInterface(devPath='/dev/ttyACM0')
         print("Connected to Radio. Ready for messages.", file=sys.stderr)
     except Exception as e:
         print(f"FATAL: Could not connect to radio: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Listen to stdin (fed by the C++ QProcess)
+
     try:
         for line in sys.stdin:
             msg = line.strip()
