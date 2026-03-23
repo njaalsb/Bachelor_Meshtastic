@@ -2,10 +2,10 @@ import meshtastic
 import meshtastic.serial_interface
 import time
 
-interface = meshtastic.serial_interface.SerialInterface(devPath='/dev/ttyACM0')
+interface = meshtastic.serial_interface.SerialInterface(devPath='/dev/ttyACM1')
 
-def send_test_packets(count=100, delay=4):
-    target_bytes = 150
+def send_test_packets(count=100, delay=6):
+    target_bytes = 200
     print(f"Sending {count} packets at {target_bytes} bytes each...")
     
     for i in range(1, count + 1):
@@ -32,4 +32,4 @@ def send_test_packets(count=100, delay=4):
     interface.close()
 
 if __name__ == "__main__":
-    send_test_packets(count=100, delay=4)
+    send_test_packets(count=100, delay=6)
