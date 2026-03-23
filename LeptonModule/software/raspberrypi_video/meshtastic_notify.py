@@ -3,31 +3,29 @@ import sys
 import meshtastic.serial_interface
 
 def main():
-    print("Starting Meshtastic Bridge...", file=sys.stderr)
     try:
-        # Initialize the radio connection ONCE
-        interface = meshtastic.serial_interface.SerialInterface(devPath='/dev/ttyACM0')
-        print("Connected to Radio. Ready for messages.", file=sys.stderr)
+        iface = meshtastic.serial_interface.SerialInterface()
     except Exception as e:
-        print(f"FATAL: Could not connect to radio: {e}", file=sys.stderr)
+        print(f"[bridge] Failed to open Meshtastic interface: {e}", flush=True)
         sys.exit(1)
 
-    # Listen to stdin (fed by the C++ QProcess)
+    print("[bridge] Ready.", flush=True)
+
     try:
         for line in sys.stdin:
-            msg = line.strip()
-            if msg:
-                try:
-                    # Send to channel 0
-                    interface.sendText(msg, wantAck=True)
-                    print(f"Sent: {msg[:30]}...", file=sys.stderr)
-                    sys.stderr.flush()
-                except Exception as e:
-                    print(f"Error sending message: {e}", file=sys.stderr)
+            msg = line.rstrip("\n")
+            if not msg:
+                continue
+            try:
+                iface.sendText(msg)
+                print(f"[bridge] Sent: {msg[:40]}...", flush=True)
+            except Exception as e:
+                print(f"[bridge] Send error: {e}", flush=True)
     except KeyboardInterrupt:
         pass
     finally:
-        interface.close()
+        iface.close()
+        print("[bridge] Closed.", flush=True)
 
 if __name__ == "__main__":
     main()
