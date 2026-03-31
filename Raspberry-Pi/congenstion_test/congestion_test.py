@@ -1,224 +1,192 @@
 #!/usr/bin/env python3
 """
-Meshtastic Telemetry Logger
-
-Listens for incoming Meshtastic messages via a serial-connected radio,
-filters for Telemetry App packets from specified node IDs, and logs
-timing information to a CSV file.
-
-Additionally, sends telemetry requests to tracked nodes every minute.
-
-Requirements:
-    pip install meshtastic
-
-Usage:
-    python meshtastic_telemetry_logger.py
-
-Configure the settings in the CONFIGURATION section below.
+Meshtastic Time Broadcast Receiver
+Receives timestamp messages and logs timing data to CSV.
+Run this script on the Raspberry Pi connected to Radio 1.
 """
 
+import meshtastic
+import meshtastic.serial_interface
+from pubsub import pub
+from datetime import datetime
 import csv
 import os
 import sys
 import time
-import threading
-from datetime import datetime, timezone
-
-try:
-    import meshtastic
-    import meshtastic.serial_interface
-    from pubsub import pub
-except ImportError:
-    print("ERROR: Required packages not installed.")
-    print("Install with:  pip install meshtastic")
-    sys.exit(1)
-
 
 # =============================================================================
-# CONFIGURATION — Edit these values to suit your setup
+# CONFIGURATION - Edit these settings as needed
 # =============================================================================
 
-# Serial device path to the Meshtastic radio.
-SERIAL_DEVICE = "/dev/ttyACM0"
+# Serial port: Set to specific port like '/dev/ttyUSB0' or '/dev/ttyACM0'
+# Set to None for auto-detect
+SERIAL_PORT = "/dev/ttyACM0"
 
-# CSV output file name (created in the working directory).
-CSV_FILENAME = "no_congestion.csv"
+# CSV file to log timing data
+CSV_FILE = "congestion_1sek.csv"
 
-# Node IDs to log. Use the hex node ID strings (with or without '!' prefix).
-# Examples: ["!a1b2c3d4", "!deadbeef"]
-# Set to an empty list [] to log ALL nodes (but requests will only be sent
-# to explicitly listed nodes).
-TRACKED_NODE_IDS = [
-    "!9eeff3a4"
-    #"!6ba526c6",
-    #""
+# Node filter: Add node IDs to only listen to specific nodes
+# Use node ID format like '!9eeff3a4' (from your debug: 'fromId': '!9eeff3a4')
+# Leave empty [] to listen to all nodes
+ALLOWED_NODES = [
+    '!9eeff3a4',  # Example: Your Radio 2 node ID
+    # ''
 ]
-
-# Interval in seconds between telemetry requests.
-REQUEST_INTERVAL_SECONDS = 60
 
 # =============================================================================
 # END OF CONFIGURATION
 # =============================================================================
 
-CSV_HEADER = [
-    "node_id",
-    "message_sent_utc",
-    "message_received_utc",
-    "latency_seconds",
-]
-
-# Global reference to the interface (set in main)
-_interface = None
-_stop_event = threading.Event()
+TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-def normalize_node_id(node_id: str) -> str:
-    """Ensure node ID has the '!' prefix and is lowercase."""
-    node_id = str(node_id).strip().lower()
-    if not node_id.startswith("!"):
-        node_id = "!" + node_id
-    return node_id
+def parse_timestamp(payload):
+    """Extract timestamp from payload in format 'TIME:YYYY-MM-DD HH:MM:SS'."""
+    # Handle both string and bytes payload
+    if isinstance(payload, bytes):
+        payload = payload.decode('utf-8', errors='ignore')
+    
+    payload = str(payload).strip()
+    
+    if payload.startswith("TIME:"):
+        timestamp_str = payload[5:]  # Remove 'TIME:' prefix
+        try:
+            return datetime.strptime(timestamp_str, TIME_FORMAT)
+        except ValueError as e:
+            print(f"  Error parsing timestamp '{timestamp_str}': {e}")
+            return None
+    return None
 
 
-def init_csv(filepath: str) -> None:
-    """Create the CSV file with a header row if it doesn't already exist."""
-    if not os.path.isfile(filepath):
-        with open(filepath, "w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(CSV_HEADER)
-        print(f"[init] Created new CSV file: {filepath}")
-    else:
-        print(f"[init] Appending to existing CSV file: {filepath}")
+def log_to_csv(send_time, receive_time, transmission_time, sender_id):
+    """Append the timing data to the CSV file."""
+    file_exists = os.path.isfile(CSV_FILE)
+    
+    with open(CSV_FILE, 'a', newline='') as csvfile:
+        fieldnames = ['send_time', 'receive_time', 'transmission_time_seconds', 'sender_node']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        
+        if not file_exists:
+            writer.writeheader()
+        
+        writer.writerow({
+            'send_time': send_time.strftime(TIME_FORMAT),
+            'receive_time': receive_time.strftime(TIME_FORMAT),
+            'transmission_time_seconds': f"{transmission_time:.3f}",
+            'sender_node': sender_id
+        })
 
 
-def append_row(filepath: str, row: list) -> None:
-    """Append a single data row to the CSV file."""
-    with open(filepath, "a", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(row)
+def is_allowed_node(from_id):
+    """Check if the sender is in the allowed nodes list."""
+    if not ALLOWED_NODES:
+        return True
+    return from_id in ALLOWED_NODES
 
 
-def on_receive(packet, interface) -> None:  # noqa: ARG001
-    """Callback invoked for every received Meshtastic packet."""
-
+def on_receive(packet, interface):
+    """Callback for all received packets."""
+    receive_time = datetime.now()
+    
     try:
-        # --- Filter: only Telemetry App packets ---
-        port_num = packet.get("decoded", {}).get("portnum", "")
-        if port_num != "TELEMETRY_APP":
+        from_id = packet.get('fromId', 'unknown')
+        
+        # Check node filter
+        if not is_allowed_node(from_id):
             return
-
-        # --- Extract sender node ID ---
-        from_id = packet.get("fromId", "")
-        node_id = normalize_node_id(from_id)
-
-        # --- Filter: only tracked nodes (if list is non-empty) ---
-        if TRACKED_NODE_IDS:
-            tracked = [normalize_node_id(n) for n in TRACKED_NODE_IDS]
-            if node_id not in tracked:
-                return
-
-        # --- Extract the device metrics timestamp ---
-        telemetry = packet.get("decoded", {}).get("telemetry", {})
-        sent_timestamp = telemetry.get("time", None)
-
-        # Fallback: some firmware versions put the send time in rxTime
-        if sent_timestamp is None:
-            sent_timestamp = packet.get("rxTime", None)
-
-        if sent_timestamp is None:
-            print(f"[warn] Telemetry packet from {node_id} has no timestamp — skipping.")
+        
+        decoded = packet.get('decoded', {})
+        portnum = decoded.get('portnum', '')
+        
+        if portnum != 'TEXT_MESSAGE_APP':
             return
-
-        # --- Compute times ---
-        sent_dt = datetime.fromtimestamp(sent_timestamp, tz=timezone.utc)
-        received_dt = datetime.now(tz=timezone.utc)
-        latency = (received_dt - sent_dt).total_seconds()
-
-        sent_str = sent_dt.strftime("%Y-%m-%d %H:%M:%S")
-        received_str = received_dt.strftime("%Y-%m-%d %H:%M:%S")
-
-        # --- Log to CSV ---
-        row = [node_id, sent_str, received_str, f"{latency:.2f}"]
-        append_row(CSV_FILENAME, row)
-
-        print(
-            f"[log] Node {node_id}  |  sent {sent_str}  |  "
-            f"received {received_str}  |  latency {latency:.2f}s"
-        )
-
-    except Exception as exc:
-        print(f"[error] Failed to process packet: {exc}")
-
-
-def request_telemetry_loop() -> None:
-    """Background thread: sends telemetry requests to tracked nodes periodically."""
-    global _interface
-
-    while not _stop_event.is_set():
-        if _interface is not None and TRACKED_NODE_IDS:
-            for node_id in TRACKED_NODE_IDS:
-                node_id = normalize_node_id(node_id)
-                if not node_id or node_id == "!":
-                    continue
-                try:
-                    # Convert node ID to integer (remove '!' prefix, parse hex)
-                    node_num = int(node_id[1:], 16)
-                    print(f"[request] Requesting telemetry from {node_id}")
-                    _interface.sendTelemetry(destinationId=node_num, wantResponse=True)
-                except Exception as exc:
-                    print(f"[error] Failed to request telemetry from {node_id}: {exc}")
-
-        # Wait for the interval, but check stop_event frequently for clean shutdown
-        for _ in range(REQUEST_INTERVAL_SECONDS):
-            if _stop_event.is_set():
-                break
-            time.sleep(1)
+        
+        # Try to get the text - check both 'text' and 'payload'
+        payload = decoded.get('text') or decoded.get('payload', b'')
+        
+        if isinstance(payload, bytes):
+            payload = payload.decode('utf-8', errors='ignore')
+        
+        if not payload:
+            return
+        
+        send_time = parse_timestamp(payload)
+        
+        if send_time:
+            transmission_time = (receive_time - send_time).total_seconds()
+            log_to_csv(send_time, receive_time, transmission_time, from_id)
+            
+            print(f"\n{'=' * 50}")
+            print(f"Timestamp message received from {from_id}")
+            print(f"  Send time:         {send_time.strftime(TIME_FORMAT)}")
+            print(f"  Receive time:      {receive_time.strftime(TIME_FORMAT)}")
+            print(f"  Transmission time: {transmission_time:.3f} seconds")
+            print(f"  Logged to: {CSV_FILE}")
+            print(f"{'=' * 50}")
+        else:
+            print(f"[{receive_time.strftime(TIME_FORMAT)}] From {from_id}: {payload}")
+            
+    except Exception as e:
+        print(f"Error in on_receive: {e}")
+        import traceback
+        traceback.print_exc()
 
 
-def main() -> None:
-    global _interface
+def on_text_receive(packet, interface):
+    """Callback specifically for text messages."""
+    # This is triggered by meshtastic.receive.text
+    on_receive(packet, interface)
 
-    print("=" * 60)
-    print("  Meshtastic Telemetry Logger")
-    print("=" * 60)
-    print(f"  Serial device      : {SERIAL_DEVICE}")
-    print(f"  CSV file           : {CSV_FILENAME}")
-    print(f"  Request interval   : {REQUEST_INTERVAL_SECONDS}s")
-    if TRACKED_NODE_IDS:
-        print(f"  Tracking nodes     : {', '.join(TRACKED_NODE_IDS)}")
+
+def on_connection(interface, topic=pub.AUTO_TOPIC):
+    """Called when we connect to the radio."""
+    print("Connected to radio!")
+
+
+def main():
+    print("Meshtastic Time Broadcast Receiver")
+    print("=" * 50)
+    print(f"Serial port: {SERIAL_PORT or 'Auto-detect'}")
+    print(f"Logging to:  {CSV_FILE}")
+    if ALLOWED_NODES:
+        print(f"Filtering:   Only nodes: {ALLOWED_NODES}")
     else:
-        print("  Tracking nodes     : ALL (no requests will be sent)")
-    print("=" * 60)
-
-    init_csv(CSV_FILENAME)
-
-    # Subscribe to all received packets.
+        print("Filtering:   Listening to ALL nodes")
+    print("=" * 50)
+    
+    # Subscribe to multiple topics to catch messages
     pub.subscribe(on_receive, "meshtastic.receive")
-
-    print(f"[init] Connecting to Meshtastic radio on {SERIAL_DEVICE} ...")
+    pub.subscribe(on_text_receive, "meshtastic.receive.text")
+    pub.subscribe(on_connection, "meshtastic.connection.established")
+    
+    print("\nConnecting to Meshtastic device...")
+    
+    interface = None
+    
     try:
-        _interface = meshtastic.serial_interface.SerialInterface(devPath=SERIAL_DEVICE)
-    except Exception as exc:
-        print(f"[fatal] Could not open serial device: {exc}")
-        sys.exit(1)
-
-    # Start the background thread for sending telemetry requests
-    request_thread = threading.Thread(target=request_telemetry_loop, daemon=True)
-    request_thread.start()
-    print("[init] Started telemetry request thread.")
-
-    print("[ready] Listening for telemetry packets. Press Ctrl+C to stop.\n")
-
-    try:
+        if SERIAL_PORT:
+            interface = meshtastic.serial_interface.SerialInterface(SERIAL_PORT)
+        else:
+            interface = meshtastic.serial_interface.SerialInterface()
+        
+        print("Listening for messages... (Press Ctrl+C to stop)\n")
+        
+        # Keep running
         while True:
+            sys.stdout.flush()
             time.sleep(1)
+            
     except KeyboardInterrupt:
-        print("\n[exit] Shutting down ...")
-        _stop_event.set()
-        request_thread.join(timeout=5)
-        _interface.close()
-        print("[exit] Done.")
+        print("\n\nStopping receiver...")
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+    finally:
+        if interface:
+            interface.close()
+            print("Connection closed.")
 
 
 if __name__ == "__main__":
