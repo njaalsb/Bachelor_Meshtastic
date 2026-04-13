@@ -121,8 +121,8 @@ int main(int argc, char **argv)
         qDebug() << "[main] Frame skipped (previous send still in progress).";
     });
 
-    // --- Capture timer: fires every 60 seconds ---
-    // If the send thread is still busy from the last image it will skip gracefully.
+
+    // If the send thread is still busy from the last image it will skip. Trying with 120 seconds
     QTimer *captureTimer = new QTimer();
     QObject::connect(captureTimer, &QTimer::timeout, [&]() {
         QImage image;
@@ -140,7 +140,7 @@ int main(int argc, char **argv)
         QByteArray buffer;
         QBuffer buf(&buffer);
         buf.open(QIODevice::WriteOnly);
-        image.save(&buf, "WEBP", 40);
+        image.save(&buf, "WEBP", 40); //Q is the quality factor (0-100), lower is more compression
         buf.close();
 
         qDebug() << "[main] Compressed image:" << buffer.size()
@@ -158,11 +158,9 @@ int main(int argc, char **argv)
         sendThread->sendImage(buffer);
     });
 
-    // Fire every 60s. Adjust as needed — must be > (numChunks * 10s) or
-    // the send thread will just skip the next frame automatically.
-    captureTimer->start(60000);
+    captureTimer->start(120000);
 
-    // --- SDR thread (optional) ---
+    // --- SDR thread can be enabled ---
     if (sdrEnable) {
         SDRThread *sdrThread = new SDRThread();
         sdrThread->setFrequency(sdrFreq);

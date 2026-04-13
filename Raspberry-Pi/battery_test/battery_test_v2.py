@@ -34,10 +34,10 @@ MONITORED_NODES: list[str] = [
 ]
 
 # Path to the output CSV file
-CSV_FILE = "battery_log_rcv_msg.csv"
+CSV_FILE = "testing.csv"
 
 # Serial device path (set to None for auto-detect)
-SERIAL_DEVICE = "/dev/ttyACM1" #None  # e.g., "/dev/ttyUSB0" or "/dev/ttyACM0"
+SERIAL_DEVICE = "/dev/ttyACM0" #None  # e.g., "/dev/ttyUSB0" or "/dev/ttyACM0"
 
 # =============================================================================
 # END OF CONFIGURATION
