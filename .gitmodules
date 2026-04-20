@@ -1,0 +1,3 @@
+[submodule "Meshtastic-ATAK-plugin"]
+	path = Meshtastic-ATAK-plugin
+	url = https://github.com/njaalsb/Meshtastic-ATAK-plugin
