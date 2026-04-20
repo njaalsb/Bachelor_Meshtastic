@@ -19,7 +19,7 @@ class Reassembler:
 
     def add_packet(self, raw: bytes):
         if len(raw) < HEADER_SIZE:
-            print(f"[rx] Packet too short ({len(raw)} bytes), ignoring.")
+            print(f" Packet too short ({len(raw)} bytes), ignoring.")
             return None, None, None, None
 
         msg_id, total, idx, plen = struct.unpack(">BHHH", raw[:HEADER_SIZE])
@@ -81,7 +81,7 @@ def on_receive(packet, interface):
     # SDR alerts from sender
     if text.startswith("SDR|ALERT|"):
         power = text.split("|")[2]
-        print(f"[rx] SDR alert received — signal power: {power}")
+        print(f"SDR alert received — signal power: {power}")
         return
 
     if not text.startswith("IMG|"):
@@ -90,7 +90,7 @@ def on_receive(packet, interface):
     try:
         parts = text.split("|", 3)
         if len(parts) != 4:
-            print(f"[rx] Malformed IMG message: {text[:60]}")
+            print(f"Malformed IMG message: {text[:60]}")
             return
 
         _, msg_id_str, idx_str, b64 = parts
@@ -100,9 +100,9 @@ def on_receive(packet, interface):
         if msg_id is None:
             return
 
-        rssi = packet.get("rxRssi", "N/A")
-        snr  = packet.get("rxSnr",  "N/A")
-        print(f"[rx] msg_id={msg_id}  idx={idx:>3}  have={have}/{total}  "
+        rssi = packet.get("Rssi", "N/A")
+        snr  = packet.get("Snr",  "N/A")
+        print(f"msg_id={msg_id}  idx={idx:>3}  have={have}/{total}  "
               f"RSSI={rssi}  SNR={snr}")
 
         rebuilt = reasm.try_rebuild(msg_id)
@@ -111,13 +111,13 @@ def on_receive(packet, interface):
             stem     = f"thermal_{ts}_id{msg_id}"
             out_path = unique_path(out_dir, stem, ".webp")
             out_path.write_bytes(rebuilt)
-            print(f"\n[rx] ✓ Image complete! {len(rebuilt)} bytes → {out_path}\n")
+            print(f"\n Image complete! {len(rebuilt)} bytes → {out_path}\n")
         else:
             missing = reasm.missing_chunks(msg_id)
-            print(f"[rx]   Still missing: {missing}")
+            print(f"Still missing: {missing}")
 
     except Exception as e:
-        print(f"[rx] Error processing packet: {e}", file=sys.stderr)
+        print(f"Error processing packet: {e}", file=sys.stderr)
 
 
 def main():
@@ -127,14 +127,14 @@ def main():
         print(f"[rx] Failed to open interface: {e}", file=sys.stderr)
         sys.exit(1)
 
-    print("[rx] Listening... Ctrl+C to stop.")
+    print("Listening... Ctrl+C to stop.")
     pub.subscribe(on_receive, "meshtastic.receive")
 
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\n[rx] Shutting down.")
+        print("\n Shutting down.")
     finally:
         iface.close()
 
