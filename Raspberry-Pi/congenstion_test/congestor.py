@@ -6,7 +6,7 @@ import time
 SERIAL_PORT = "/dev/ttyACM1"
 DESTINATION_NODE = "!9eeff3c4"  # Node ID to send to
 MESSAGE_BYTES = 200             # Size of each message in bytes
-DELAY_SECONDS = 0.5               # Delay between messages
+DELAY_SECONDS = 0.2               # Delay between messages
 
 # ── Setup ──
 interface = meshtastic.serial_interface.SerialInterface(devPath=SERIAL_PORT)

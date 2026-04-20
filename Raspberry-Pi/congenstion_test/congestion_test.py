@@ -23,7 +23,7 @@ import time
 SERIAL_PORT = "/dev/ttyACM0"
 
 # CSV file to log timing data
-CSV_FILE = "congestion_1sek.csv"
+CSV_FILE = "02sek_congestion.csv"
 
 # Node filter: Add node IDs to only listen to specific nodes
 # Use node ID format like '!9eeff3a4' (from your debug: 'fromId': '!9eeff3a4')
