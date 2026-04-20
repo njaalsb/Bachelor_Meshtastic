@@ -12,7 +12,7 @@ import time
 import sys
 
 # Configuration
-SEND_INTERVAL = 60  # seconds between messages
+SEND_INTERVAL = 30  # seconds between messages
 SERIAL_PORT = None  # Set to specific port like '/dev/ttyUSB0' or 'COM3', or None for auto-detect
 
 def get_timestamp():
