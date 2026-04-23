@@ -172,7 +172,7 @@ int main(int argc, char **argv)
         sdrThread->start();
     }
 
-    MeshtasticHelper::instance().sendMessage("Hei");
+    MeshtasticHelper::instance().sendMessage("Proof of concept code is starting");
 
     return a.exec();
 }

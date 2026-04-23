@@ -82,8 +82,3 @@ TAKDEV JAR = C:/ATAK-CIV-5.5.1.8-SDK/atak-gradle-takdev.jar
 TAKDEV JAR PATH = C:/ATAK-CIV-5.5.1.8-SDK/atak-gradle-takdev.jar
 
 
-
-\# Spørsmål til claude
-
-Ok, so i have some quick questions before we proceed. The phone i have has meshtastic 2.7.13, ATAK CIV 5.6.0.9 downloaded and a version of the meshtastic plugin (it says firmware version 2.7.10.94d4bdf?). Do i need to delete any of this before doing the steps you mentioned above?
-
