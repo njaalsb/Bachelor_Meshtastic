@@ -1,3 +1,6 @@
+# Overforing av telemetri fra 72da -> a0f9 (preset ShortFast)
+
+
 """
 Send dummy frequency readings to the ATAK Meshtastic plugin for testing.
 
