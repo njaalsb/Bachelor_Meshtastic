@@ -15,7 +15,7 @@
 #include "SDRThread.h"
 #include "ImageSendThread.h"
 
-void printUsage(char *cmd) {
+/*void printUsage(char *cmd) {
     char *cmdname = basename(cmd);
     printf("Usage: %s [OPTION]...\n"
            " -h       display this help and exit\n"
@@ -36,7 +36,7 @@ void printUsage(char *cmd) {
            " -sdr_thresh x  SDR signal threshold [default 10000.0]\n"
            "", cmdname, cmdname);
 }
-
+*/
 int main(int argc, char **argv)
 {
     int typeColormap = 3;
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
     });
 
 
-    // If the send thread is still busy from the last image it will skip. Trying with 120 seconds
+    // If the send thread is still busy from the last image it will skip.
     QTimer *captureTimer = new QTimer();
     QObject::connect(captureTimer, &QTimer::timeout, [&]() {
         QImage image;

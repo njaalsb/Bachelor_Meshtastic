@@ -4,7 +4,7 @@ import meshtastic.serial_interface
 
 def main():
     try:
-        iface = meshtastic.serial_interface.SerialInterface(devPath='/dev/ttyACM1')
+        iface = meshtastic.serial_interface.SerialInterface(devPath='/dev/ttyACM0')
     except Exception as e:
         print(f"[bridge] Failed to open Meshtastic interface: {e}", flush=True)
         sys.exit(1)
