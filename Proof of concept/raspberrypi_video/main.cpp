@@ -45,7 +45,7 @@ int main(int argc, char **argv)
     int rangeMin     = -1;
     int rangeMax     = -1;
     int loglevel     = 0;
-    bool sdrEnable   = true;
+    bool sdrEnable   = false;
     uint32_t sdrFreq = 869525000;
     float sdrThresh  = 10000.0f;
 
