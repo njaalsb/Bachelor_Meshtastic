@@ -29,6 +29,9 @@ private:
 
     float maxPower;
     int counter;
+    float peakFreqHz;
+
+    float computePeakFreq(const uint8_t *buf, int len);
 };
 
 #endif // SDRTHREAD_H

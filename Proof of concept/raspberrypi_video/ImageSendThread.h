@@ -28,8 +28,8 @@ private:
     QMutex      m_mutex;
     bool        m_busy = false;
 
-    static constexpr int MAX_PAYLOAD  = 150;  // bytes per chunk (well under 230 limit)
-    static constexpr int CHUNK_DELAY_MS = 10000; // 10 seconds between chunks
+    static constexpr int MAX_PAYLOAD  = 150;  
+    static constexpr int CHUNK_DELAY_MS = 7000; 
 };
 
 #endif // IMAGESENDTHREAD_H

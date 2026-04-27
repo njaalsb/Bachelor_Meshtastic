@@ -1,5 +1,5 @@
 #include "ImageSendThread.h"
-#include "MeshtasticHelper.h"
+#include "MeshtasticBridge.h"
 
 #include <QMutexLocker>
 #include <QRandomGenerator>
@@ -44,7 +44,7 @@ void ImageSendThread::run()
         const int total = (buffer.size() + MAX_PAYLOAD - 1) / MAX_PAYLOAD;
         const quint8 sid = (quint8)QRandomGenerator::global()->bounded(1, 256);
 
-        qDebug() << "[ImageSendThread] Starting send: sid=" << sid
+        qDebug() << "Sending image: sid=" << sid
                  << "chunks=" << total
                  << "bytes=" << buffer.size();
 
@@ -54,8 +54,8 @@ void ImageSendThread::run()
             // 7-byte binary header: [sid:1][total:2][idx:2][plen:2]
             QByteArray packet(7, 0);
             packet[0] = (char)sid;
-            qToBigEndian((quint16)total,        (uchar*)packet.data() + 1);
-            qToBigEndian((quint16)idx,           (uchar*)packet.data() + 3);
+            qToBigEndian((quint16)total,(uchar*)packet.data() + 1);
+            qToBigEndian((quint16)idx,(uchar*)packet.data() + 3);
             qToBigEndian((quint16)payload.size(),(uchar*)packet.data() + 5);
             packet.append(payload);
 
@@ -65,7 +65,7 @@ void ImageSendThread::run()
                               .arg(idx)
                               .arg(QString(packet.toBase64()));
 
-            MeshtasticHelper::instance().sendMessage(msg);
+            MeshtasticBridge::instance().sendMessage(msg);
             emit chunkSent(idx, total);
 
             qDebug() << "[ImageSendThread] Sent chunk" << idx << "/" << (total - 1);

@@ -24,7 +24,7 @@ HEADERS += *.h
 
 SOURCES += *.cpp
 
-unix:LIBS += -L$${RPI_LIBS}/$${LEPTONSDK}/Debug -lLEPTON_SDK -lrtlsdr
+unix:LIBS += -L$${RPI_LIBS}/$${LEPTONSDK}/Debug -lLEPTON_SDK -lrtlsdr -lusb-1.0
 
 unix:QMAKE_CLEAN += -r $(OBJECTS_DIR) $${MOC_DIR}
 

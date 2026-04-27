@@ -11,11 +11,11 @@
 #include <QtEndian>
 
 #include "LeptonThread.h"
-#include "MeshtasticHelper.h"
+#include "MeshtasticBridge.h"
 #include "SDRThread.h"
 #include "ImageSendThread.h"
 
-/*void printUsage(char *cmd) {
+void printUsage(char *cmd) {
     char *cmdname = basename(cmd);
     printf("Usage: %s [OPTION]...\n"
            " -h       display this help and exit\n"
@@ -34,18 +34,18 @@
            " -sdr_enable   enable SDR monitoring\n"
            " -sdr_freq x   SDR center frequency in Hz [default 869525000]\n"
            " -sdr_thresh x  SDR signal threshold [default 10000.0]\n"
-           "", cmdname, cmdname);
+           , cmdname);
 }
-*/
+
 int main(int argc, char **argv)
 {
     int typeColormap = 3;
-    int typeLepton   = 2;
+    int typeLepton   = 3;
     int spiSpeed     = 20;
     int rangeMin     = -1;
     int rangeMax     = -1;
     int loglevel     = 0;
-    bool sdrEnable   = false;
+    bool sdrEnable   = true;
     uint32_t sdrFreq = 869525000;
     float sdrThresh  = 10000.0f;
 
@@ -108,6 +108,7 @@ int main(int argc, char **argv)
     });
     leptonThread->start();
 
+
     // --- Image send thread ---
     ImageSendThread *sendThread = new ImageSendThread();
 
@@ -160,19 +161,24 @@ int main(int argc, char **argv)
 
     captureTimer->start(120000);
 
-    // --- SDR thread can be enabled ---
     if (sdrEnable) {
         SDRThread *sdrThread = new SDRThread();
         sdrThread->setFrequency(sdrFreq);
         sdrThread->setThreshold(sdrThresh);
-        QObject::connect(sdrThread, &SDRThread::signalUpdate, [](float power) {
-            QString alert = QString("SDR|ALERT|%1").arg(power);
-            MeshtasticHelper::instance().sendMessage(alert);
+        QObject::connect(sdrThread, &SDRThread::signalUpdate, [](float peakFreqHz) {
+            QByteArray payload;
+            payload.resize(6);
+            payload[0] = 0x03;
+            payload[1] = 0x01;
+
+            memcpy(payload.data() + 2, &peakFreqHz, sizeof(float));
+
+            MeshtasticBridge::instance().sendRawData(payload, 257);
         });
         sdrThread->start();
     }
 
-    MeshtasticHelper::instance().sendMessage("Proof of concept code is starting");
+    MeshtasticBridge::instance().sendMessage("test");
 
     return a.exec();
 }
