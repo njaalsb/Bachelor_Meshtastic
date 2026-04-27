@@ -1,0 +1,2 @@
+Ønskes mer informasjon om N50 Kartdata finnes dette på www.geonorge.no. Her ligger blant annet: generell informasjon om datasettet, produktspesifikasjon, produktark og mulighet for nedlasting av datasettet.
+Direktelink til N50 Kartdata: https://kartkatalog.geonorge.no/metadata/kartverket/n50-kartdata/ea192681-d039-42ec-b1bc-f3ce04c189ac
