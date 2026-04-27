@@ -1,10 +1,18 @@
 ### ATAK notes:
 
-Viktige filer
+**Offisielle docs:** https://tak.gov/documentation/resources/tak-developers
 
-* app/src/main/assets/plugin.xml
-* app/src/main/java/com/atakmap/android/meshtastic
-* app/src/main/java/com/atakmap/android/meshtastic/plugin/MeshtasticLifecycle.java
+
+
+#### CoT - Cursor-on-Target
+
+* Dette er kommunikasjonsprotokollformatet som ATAK bruker for å dele bl.a possisjonsdata.
+* Fungerer som en slags common-language for taktiske systemer, dette er litt som protobufs rolle i meshtastic 
+* Oversettelse fra CoT-event til protobuf gjøres i CotEventProcessor.java
+
+
+
+**CoT docs:** https://www.mitre.org/sites/default/files/pdf/09\_4937.pdf
 
 
 
@@ -31,30 +39,6 @@ https://www.ballantyne.online/developing-atak-plugin-101/
 
 
 
-Paths:
-
-atak.sdk=C\\:\\\\ATAK-CIV-5.5.1.8-SDK
-
-takdev.plugin=C\\:\\\\ATAK-CIV-5.5.1.8-SDK\\\\atak-gradle-takdev.jar
-
-
-
-ATAK-Plugin/local.properties
-
-
-
-ATAK-Plugin/app/build.gradle
-
-
-
-C:\\ATAK-CIV-5.5.1.8-SDK\\atak-gradle-takdev.jar
-
-
-
-**Prosjektlokasjon:**
-
-C:\\Users\\bruhe\\StudioProjects\\ATAK-Plugin
-
 
 
 ## Kommandoer
@@ -71,14 +55,25 @@ C:\\Users\\bruhe\\StudioProjects\\ATAK-Plugin
 
 
 
-keytool -genkeypair -keyalg RSA -keysize 2048 -alias androiddebugkey -keypass android -keystore debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999
 
-#### 
 
-#### Debug prints:
+## Meshtastic-plugin
 
-TAKDEV JAR = C:/ATAK-CIV-5.5.1.8-SDK/atak-gradle-takdev.jar
+**Docs:** 
 
-TAKDEV JAR PATH = C:/ATAK-CIV-5.5.1.8-SDK/atak-gradle-takdev.jar
+#### Funksjonalitet
 
+Hovedfunksjonaliteten til pluginnen er i grove trekk:
+
+
+
+**Rx**
+
+Meshtastic melding \[protobuf] -> konverteres \[CoT-event] -> sendes til ATAK \[CoT-event] -> markør på ATAK kartet
+
+
+
+**Tx**
+
+Melding genereres i ATAK \[CoT-event] -> Plugin gjør om til \[protobuf] -> melding sendes over mesh \[protbuf]
 
