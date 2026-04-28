@@ -100,10 +100,9 @@ def on_receive(packet, interface):
         if msg_id is None:
             return
 
-        rssi = packet.get("Rssi", "N/A")
-        snr  = packet.get("Snr",  "N/A")
+
         print(f"msg_id={msg_id}  idx={idx:>3}  have={have}/{total}  "
-              f"RSSI={rssi}  SNR={snr}")
+              )
 
         rebuilt = reasm.try_rebuild(msg_id)
         if rebuilt is not None:
