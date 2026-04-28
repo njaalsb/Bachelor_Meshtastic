@@ -148,11 +148,11 @@ int main(int argc, char **argv)
                  << "bytes ->" << ((buffer.size() + 149) / 150) << "chunks";
 
         // Save a local backup
-        QString filename = QString("thermal_backup_%1.webp")
-                               .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss"));
-        if (image.save(filename, "WEBP", 40)) {
-            qDebug() << "[main] Saved local backup:" << filename;
-        }
+        //QString filename = QString("thermal_backup_%1.webp")
+        //                       .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss"));
+        //if (image.save(filename, "WEBP", 40)) {
+        //    qDebug() << "[main] Saved local backup:" << filename;
+        //}
 
         sendThread->sendImage(buffer);
     });
