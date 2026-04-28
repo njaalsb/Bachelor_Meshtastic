@@ -189,7 +189,7 @@ void LeptonThread::run()
 
 		if ((autoRangeMin == true) || (autoRangeMax == true)) {
 			if (autoRangeMin == true) {
-				maxValue = 65535;
+				minValue = 65535;
 			}
 			if (autoRangeMax == true) {
 				maxValue = 0;

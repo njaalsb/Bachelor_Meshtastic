@@ -149,17 +149,16 @@ int main(int argc, char **argv)
 
         // Save a local backup
         QString filename = QString("thermal_backup_%1.webp")
-                               .arg(QDateTime::currentDateTime()
-                                        .toString("yyyy-MM-dd_hh-mm-ss"));
+                               .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss"));
         if (image.save(filename, "WEBP", 40)) {
             qDebug() << "[main] Saved local backup:" << filename;
         }
 
-        // Hand off to send thread (non-blocking)
         sendThread->sendImage(buffer);
     });
 
     captureTimer->start(120000);
+    //captureTimer->start(10000);
 
     if (sdrEnable) {
         SDRThread *sdrThread = new SDRThread();
