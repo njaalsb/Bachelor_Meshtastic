@@ -60,10 +60,10 @@ ZOOM_YMAX = 7036000     # Nordgrense  (meter nord)
 
 # WGS84 lat/lon – sett ZOOM_FRA_LATLON = True for å bruke disse i stedet:
 ZOOM_FRA_LATLON = True
-ZOOM_LAT_MIN    = 63.417     # Sørgrense  (grader nord)
-ZOOM_LAT_MAX    = 63.419     # Nordgrense (grader nord)
-ZOOM_LON_MIN    = 10.396     # Vestgrense (grader øst)
-ZOOM_LON_MAX    = 10.405     # Østgrense  (grader øst)
+ZOOM_LAT_MIN    = 63.3869     # Sørgrense  (grader nord)
+ZOOM_LAT_MAX    = 63.4237     # Nordgrense (grader nord)
+ZOOM_LON_MIN    = 10.249     # Vestgrense (grader øst)
+ZOOM_LON_MAX    = 10.499     # Østgrense  (grader øst)
 
 # ── UTSEENDE ─────────────────────────────────────────────────────────────────
 TX_FARGER = ['#e63946', '#457b9d', '#2a9d8f', '#e9c46a', '#f4a261']
@@ -260,14 +260,14 @@ cbar.ax.tick_params(labelsize=8)
 
 # --- Tegnforklaring ---
 legend_el = [
-    mpatches.Patch(color='#b8d4a0', label='Skog'),
+    #mpatches.Patch(color='#b8d4a0', label='Skog'),
     mpatches.Patch(color='#e8e0d0', label='Tettbebyggelse'),
     mpatches.Patch(color='#c0a898', label='Bygninger'),
-    mpatches.Patch(color='#9ac4dc', label='Vann / elv'),
-    mpatches.Patch(color='#d4e8c8', label='Myr'),
-    Line2D([0],[0], color='white',   linewidth=2,              label='Veg'),
-    Line2D([0],[0], color='#444440', linewidth=2,
-           linestyle='--',                                     label='Jernbane'),
+    #mpatches.Patch(color='#9ac4dc', label='Vann / elv'),
+    #mpatches.Patch(color='#d4e8c8', label='Myr'),
+    #Line2D([0],[0], color='white',   linewidth=2,              label='Veg'),
+    #Line2D([0],[0], color='#444440', linewidth=2,
+    #       linestyle='--',                                     label='Jernbane'),
     Line2D([0],[0], color='#b8956e', linewidth=1.2,            label='Høydekurver'),
     Line2D([0],[0], marker='o', color='w',
            markerfacecolor=cmap_obj(0.9), markersize=8,        label='RX – høy SNR'),
