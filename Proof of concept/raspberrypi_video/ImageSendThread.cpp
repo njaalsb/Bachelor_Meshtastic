@@ -51,21 +51,16 @@ void ImageSendThread::run()
         for (int idx = 0; idx < total; idx++) {
             QByteArray payload = buffer.mid(idx * MAX_PAYLOAD, MAX_PAYLOAD);
 
-            // 7-byte binary header: [sid:1][total:2][idx:2][plen:2]
-            QByteArray packet(7, 0);
-            packet[0] = (char)sid;
-            qToBigEndian((quint16)total,(uchar*)packet.data() + 1);
-            qToBigEndian((quint16)idx,(uchar*)packet.data() + 3);
-            qToBigEndian((quint16)payload.size(),(uchar*)packet.data() + 5);
+            // 8-byte binary header: [0x02][sid:1][total:2][idx:2][plen:2]
+            QByteArray packet(8, 0);
+            packet[0] = (char)0x02;  // TRANSFER_TYPE_IMAGE
+            packet[1] = (char)sid;
+            qToBigEndian((quint16)total, (uchar*)packet.data() + 2);
+            qToBigEndian((quint16)idx,   (uchar*)packet.data() + 4);
+            qToBigEndian((quint16)payload.size(), (uchar*)packet.data() + 6);
             packet.append(payload);
 
-            // Format: IMG|<sid>|<idx>|<base64(header+payload)>
-            QString msg = QString("IMG|%1|%2|%3")
-                              .arg(sid)
-                              .arg(idx)
-                              .arg(QString(packet.toBase64()));
-
-            MeshtasticBridge::instance().sendMessage(msg);
+            MeshtasticBridge::instance().sendRawData(packet, 257);  // 257 = ATAK_FORWARDER
             emit chunkSent(idx, total);
 
             qDebug() << "[ImageSendThread] Sent chunk" << idx << "/" << (total - 1);

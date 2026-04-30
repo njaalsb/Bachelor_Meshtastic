@@ -3,13 +3,15 @@
 import sys
 import time
 import struct
-import base64
 from pathlib import Path
 
 import meshtastic.serial_interface
 from pubsub import pub
 
-HEADER_SIZE = 7  # [sid:1][total:2][idx:2][plen:2]
+# Header layout: [0x02][sid:1][total:2][idx:2][plen:2]
+HEADER_SIZE = 8
+TRANSFER_TYPE_IMAGE = 0x02
+ATAK_FORWARDER_PORTNUM = 257
 
 
 class Reassembler:
@@ -22,7 +24,10 @@ class Reassembler:
             print(f" Packet too short ({len(raw)} bytes), ignoring.")
             return None, None, None, None
 
-        msg_id, total, idx, plen = struct.unpack(">BHHH", raw[:HEADER_SIZE])
+        type_byte, msg_id, total, idx, plen = struct.unpack(">BBHHH", raw[:HEADER_SIZE])
+        if type_byte != TRANSFER_TYPE_IMAGE:
+            return None, None, None, None
+
         payload = raw[HEADER_SIZE: HEADER_SIZE + plen]
 
         entry = self.store.setdefault(msg_id, {"total": total, "parts": {}})
@@ -44,12 +49,11 @@ class Reassembler:
         return data
 
     def missing_chunks(self, msg_id: int):
-        """Returns a sorted list of missing chunk indices, useful for debugging."""
         entry = self.store.get(msg_id)
         if not entry:
             return []
         total = entry["total"]
-        have  = set(entry["parts"].keys())
+        have = set(entry["parts"].keys())
         return sorted(set(range(total)) - have)
 
 
@@ -65,44 +69,33 @@ def unique_path(directory: Path, stem: str, suffix: str) -> Path:
         n += 1
 
 
-reasm   = Reassembler()
+reasm = Reassembler()
 out_dir = Path(__file__).parent / "received"
 out_dir.mkdir(exist_ok=True)
 
 
 def on_receive(packet, interface):
     decoded = packet.get("decoded", {})
+    portnum = decoded.get("portnum")
 
-    # Support both text and data portnum
-    text = decoded.get("text") or decoded.get("data", {}).get("text")
-    if not text:
+    # Binary image chunks arrive on ATAK_FORWARDER port (257)
+    if portnum not in ("ATAK_FORWARDER", ATAK_FORWARDER_PORTNUM):
         return
 
-    # SDR alerts from sender
-    if text.startswith("SDR|ALERT|"):
-        power = text.split("|")[2]
-        print(f"SDR alert received — signal power: {power}")
+    raw = decoded.get("payload")
+    if not raw or len(raw) < HEADER_SIZE:
         return
-
-    if not text.startswith("IMG|"):
+    if raw[0] != TRANSFER_TYPE_IMAGE:
         return
 
     try:
-        parts = text.split("|", 3)
-        if len(parts) != 4:
-            print(f"Malformed IMG message: {text[:60]}")
-            return
-
-        _, msg_id_str, idx_str, b64 = parts
-        raw = base64.b64decode(b64)
-
         msg_id, total, idx, have = reasm.add_packet(raw)
         if msg_id is None:
             return
 
-
-        print(f"msg_id={msg_id}  idx={idx:>3}  have={have}/{total}  "
-              )
+        rssi = packet.get("rxRssi", "N/A")
+        snr  = packet.get("rxSnr",  "N/A")
+        print(f"msg_id={msg_id}  idx={idx:>3}  have={have}/{total}  RSSI={rssi}  SNR={snr}")
 
         rebuilt = reasm.try_rebuild(msg_id)
         if rebuilt is not None:
@@ -126,7 +119,7 @@ def main():
         print(f"[rx] Failed to open interface: {e}", file=sys.stderr)
         sys.exit(1)
 
-    print("Listening... Ctrl+C to stop.")
+    print("Listening for binary image chunks on ATAK_FORWARDER port (257)... Ctrl+C to stop.")
     pub.subscribe(on_receive, "meshtastic.receive")
 
     try:

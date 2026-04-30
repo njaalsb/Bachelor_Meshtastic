@@ -28,8 +28,8 @@ private:
     QMutex      m_mutex;
     bool        m_busy = false;
 
-    static constexpr int MAX_PAYLOAD  = 150;  
-    static constexpr int CHUNK_DELAY_MS = 7000; 
+    static constexpr int MAX_PAYLOAD  = 220;
+    static constexpr int CHUNK_DELAY_MS = 7000;
 };
 
 #endif // IMAGESENDTHREAD_H
