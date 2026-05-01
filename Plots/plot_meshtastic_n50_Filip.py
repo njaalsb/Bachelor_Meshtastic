@@ -243,6 +243,34 @@ sc = ax.scatter(
     s=22, zorder=10, alpha=0.85, edgecolors='none'
 )
 
+# --- Dashed lines from TX to RX with distance labels ---
+for _, tx_row in tx_unique.iterrows():
+    tx_name = tx_row['sender name']
+    # Get all RX points for this TX
+    rx_for_tx = rx_df[rx_df['sender name'] == tx_name]
+    
+    for _, rx_row in rx_for_tx.iterrows():
+        # Draw dashed line
+        ax.plot(
+            [tx_row['x'], rx_row['x']],
+            [tx_row['y'], rx_row['y']],
+            'k--', linewidth=0.8, alpha=0.4, zorder=5
+        )
+        
+        # Add distance label at midpoint
+        mid_x = (tx_row['x'] + rx_row['x']) / 2
+        mid_y = (tx_row['y'] + rx_row['y']) / 2
+        distance = rx_row['distance(m)']
+        
+        ax.text(
+            mid_x, mid_y,
+            f"{distance:.0f}m",
+            fontsize=7, ha='center', va='center',
+            bbox=dict(boxstyle='round,pad=0.3', facecolor='white',
+                      alpha=0.7, edgecolor='none'),
+            zorder=15
+        )
+
 # --- TX-punkter (trekanter, én farge per sender) ---
 for i, (_, row) in enumerate(tx_unique.iterrows()):
     farge = TX_FARGER[i % len(TX_FARGER)]
@@ -285,7 +313,7 @@ for i, (_, row) in enumerate(tx_unique.iterrows()):
                label=f"TX: {row['sender name']}")
     )
 
-ax.legend(handles=legend_el, loc='upper left', fontsize=8,
+ax.legend(handles=legend_el, loc='lower right', fontsize=8,
           framealpha=0.92, fancybox=True, shadow=True)
 
 # --- Rutenett og tittel ---
