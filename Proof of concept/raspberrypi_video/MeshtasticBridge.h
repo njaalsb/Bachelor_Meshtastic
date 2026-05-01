@@ -18,8 +18,9 @@ private:
     explicit MeshtasticBridge(QObject *parent = nullptr);
     ~MeshtasticBridge();
 
-    QProcess m_process;
     void startBridge();
+
+    QProcess m_process;
 };
 
 #endif // MESHTASTICBRIDGE_H

@@ -10,9 +10,6 @@ class ImageSendThread : public QThread
     Q_OBJECT
 public:
     explicit ImageSendThread(QObject *parent = nullptr);
-
-    // Call this to queue a new image for sending.
-    // If a send is already in progress it will be skipped.
     void sendImage(const QByteArray &webpData);
 
 protected:
@@ -28,8 +25,9 @@ private:
     QMutex      m_mutex;
     bool        m_busy = false;
 
-    static constexpr int MAX_PAYLOAD  = 220;
-    static constexpr int CHUNK_DELAY_MS = 7000;
+    static constexpr int MAX_PAYLOAD     = 217;
+    static constexpr int CHUNK_DELAY_MS  = 7000;
+    static constexpr int PORTNUM_ATAK_FORWARDER = 257;
 };
 
 #endif // IMAGESENDTHREAD_H
