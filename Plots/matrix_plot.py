@@ -70,7 +70,7 @@ def plot_matrix(snr, msgs, devices, out_path):
 
     cmap = mcolors.LinearSegmentedColormap.from_list(
         "snr_map",
-        ["#f0f4ff", "#c6d4f0", "#5a82c8", "#1a3a7a", "#0b1f4a"],
+        ["#c00000", "#c06000", "#c0c000", "#80c000", "#00c000"],
         N=256,
     )
 
@@ -100,7 +100,9 @@ def plot_matrix(snr, msgs, devices, out_path):
 
     ax.set_xticks(range(n))
     ax.set_yticks(range(n))
-    ax.set_xticklabels(labels, rotation=30, ha="right", fontweight="bold")
+    ax.xaxis.set_label_position("top")
+    ax.xaxis.tick_top()
+    ax.set_xticklabels(labels, rotation=30, ha="left", fontweight="bold")
     ax.set_yticklabels(labels, fontweight="bold")
     ax.set_xlabel("Receiver (RX)", fontsize=12, fontweight="bold")
     ax.set_ylabel("Transmitter (TX)", fontsize=12, fontweight="bold")
