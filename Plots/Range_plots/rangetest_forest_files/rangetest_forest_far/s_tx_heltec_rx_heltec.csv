@@ -1,4 +1,4 @@
-"date","time","from","sender name","sender lat","sender long","rx lat","rx long","rx elevation","rx snr","distance(m)","hop limit","payload"
+"date","time","from","sender name","sender lat","sender long","rx lat","rx long","rx elevation","rx snr","distance(m)","hop limit","payload","rssi"
 "2026-05-03","17:02:25","2232544628","Heltec Fosen","63.3948633","10.4883963","63.3974906","10.4732905","236","-16.0","807","1","1","-126"
 "2026-05-03","17:02:37","2232544628","Heltec Fosen","63.3948633","10.4883963","63.3974906","10.4732905","236","-14.75","807","1","3","-124"
 "2026-05-03","17:02:49","2232544628","Heltec Fosen","63.3948633","10.4883963","63.3974906","10.4732905","236","-18.25","807","1","4","-128"

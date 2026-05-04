@@ -88,12 +88,10 @@ def plot_matrix(snr, msgs, devices, out_path):
             ax.add_patch(plt.Rectangle([j - 0.5, i - 0.5], 1, 1, color=color))
 
             if not np.isnan(val):
-                brightness = 0.299 * color[0] + 0.587 * color[1] + 0.114 * color[2]
-                txt_c = "white" if brightness < 0.5 else "#1a2a4a"
                 ax.text(
                     j, i, f"{val:+.1f} dB\nn={msgs[i,j]}",
                     ha="center", va="center",
-                    color=txt_c, weight="bold", fontsize=10,
+                    color="black", weight="bold", fontsize=10,
                 )
             else:
                 ax.text(j, i, "N/A", ha="center", va="center", color="#9aaccc")

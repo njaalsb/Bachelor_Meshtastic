@@ -1,4 +1,4 @@
-"date","from","sender name","sender lat","sender long","rx lat","rx long","rx elevation","rx snr","distance(m)","hop limit","payload","rssi"
+"date","from","sender name","sender lat","sender long","rx lat","rx long","rx elevation","rx snr","hop limit","payload","rssi"
 "2026-05-01","3126340924","Meshtastic 2d3c","63.394835","10.4875866","63.4207361","10.252459799999999","532","5.2","3","1","-93"
 "2026-05-01","3126340924","Meshtastic 2d3c","63.394835","10.4875866","63.4207361","10.252459799999999","532","6.0","3","2","-93"
 "2026-05-01","3126340924","Meshtastic 2d3c","63.394835","10.4875866","63.4207361","10.252459799999999","532","4.0","3","3","-93"
