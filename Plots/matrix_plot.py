@@ -19,7 +19,7 @@ def discover_devices(csv_dir):
 
 def find_snr_col(headers, hint):
     lmap = {h.lower().strip(): h for h in headers}
-    for c in [hint.lower(), "rx snr", "rssi_snr", "lora_snr", "snr"]:
+    for c in [hint.lower(), "rssi", "rx snr", "rssi_snr", "lora_snr", "snr"]:
         if c in lmap:
             return lmap[c]
     return None
@@ -89,7 +89,7 @@ def plot_matrix(snr, msgs, devices, out_path):
 
             if not np.isnan(val):
                 ax.text(
-                    j, i, f"{val:+.1f} dB\nn={msgs[i,j]}",
+                    j, i, f"{val:+.1f} dBm",
                     ha="center", va="center",
                     color="black", weight="bold", fontsize=10,
                 )
@@ -107,9 +107,9 @@ def plot_matrix(snr, msgs, devices, out_path):
     ax.set_xlim(-0.5, n - 0.5)
     ax.set_ylim(n - 0.5, -0.5)
 
-    plt.title("Meshtastic SNR Matrix: All Combinations", pad=20, fontweight="bold", fontsize=14)
+    plt.title("Meshtastic Matrix : Top to Top", pad=20, fontweight="bold", fontsize=14)
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-    plt.colorbar(sm, ax=ax, label="Avg SNR (dB)")
+    plt.colorbar(sm, ax=ax, label="Avg RSSI (dBm)")
     plt.tight_layout()
     plt.savefig(out_path, dpi=150)
     print(f"✓ Saved plot to {out_path}")
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv-dir", default="./data",
                         help="Directory containing tx_X_rx_Y.csv files")
-    parser.add_argument("--snr-col", default="rx snr",
+    parser.add_argument("--snr-col", default="rssi",
                         help="SNR column name hint (default: 'rx snr')")
     parser.add_argument("--out", default="snr_matrix.png",
                         help="Output image path")
