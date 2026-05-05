@@ -75,7 +75,7 @@ int main(int argc, char **argv)
         image.save(&buf, "WEBP", 40);
         buf.close();
 
-        qDebug() << "Compressed" << buffer.size() << "bytes ->" << ((buffer.size() + 216) / 217) << "chunks";
+        qDebug() << "Compressed" << buffer.size() << "bytes ->" << ((buffer.size() + 222) / 223) << "chunks";
 
         sendThread->sendImage(buffer);
     });
