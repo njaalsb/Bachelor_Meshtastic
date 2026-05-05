@@ -47,7 +47,7 @@ void ImageSendThread::run()
             QByteArray payload = buffer.mid(idx * MAX_PAYLOAD, MAX_PAYLOAD);
 
             QByteArray packet(8, 0);
-            packet[0] = (char)0x02;
+            packet[0] = (char)PACKET_TYPE_IMG;
             packet[1] = (char)sid;
             qToBigEndian((quint16)total,        (uchar*)packet.data() + 2);
             qToBigEndian((quint16)idx,           (uchar*)packet.data() + 4);

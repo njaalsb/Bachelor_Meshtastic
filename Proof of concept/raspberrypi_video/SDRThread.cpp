@@ -26,7 +26,7 @@ void SDRThread::setThreshold(float thresh)  { threshold = thresh; }
 
 float SDRThread::computePeakFreq(const uint8_t *buf, int len)
 {
-    int N = len / 2; // number of IQ pairs
+    int N = len / 2;
     std::vector<std::complex<float>> samples(N);
 
     for (int i = 0; i < N; i++) {
@@ -35,13 +35,11 @@ float SDRThread::computePeakFreq(const uint8_t *buf, int len)
         samples[i] = {I, Q};
     }
 
-    // Remove DC (like: samples = samples - np.mean(samples))
     std::complex<float> mean(0, 0);
     for (auto &s : samples) mean += s;
     mean /= N;
     for (auto &s : samples) s -= mean;
 
-    // FFT (Cooley-Tukey, in-place)
     for (int s = 1; s < N; s <<= 1) {
         for (int i = 0; i < N; i += s << 1) {
             for (int j = 0; j < s; j++) {
@@ -55,19 +53,16 @@ float SDRThread::computePeakFreq(const uint8_t *buf, int len)
         }
     }
 
-    // fftshift + power
     std::vector<float> power(N);
     for (int i = 0; i < N; i++) {
         int shifted = (i + N / 2) % N;
         power[i] = std::abs(samples[shifted]);
     }
 
-    // Zero out DC (like: power[mid-20:mid+20] = 0)
     int mid = N / 2;
     for (int i = mid - 20; i <= mid + 20; i++)
         power[i] = 0.0f;
 
-    // Find peak
     int peakBin = 0;
     float peakPow = 0.0f;
     for (int i = 0; i < N; i++) {
@@ -77,7 +72,6 @@ float SDRThread::computePeakFreq(const uint8_t *buf, int len)
         }
     }
 
-    // Convert to Hz
     float freqOffset = (peakBin - N / 2) * (2048000.0f / N);
     return static_cast<float>(frequency) + freqOffset;
 }
@@ -97,10 +91,10 @@ void SDRThread::run()
 
     
     const int NUM_SAMPLES = 256 * 1024;
-    const int BUFFER_SIZE = NUM_SAMPLES * 2; // IQ pairs
+    const int BUFFER_SIZE = NUM_SAMPLES * 2; 
     std::vector<uint8_t> buffer(BUFFER_SIZE);
 
-    // 600 * 100ms = 60 seconds
+ 
     const int Timer = 600;
 
     while (running) {
@@ -113,8 +107,6 @@ void SDRThread::run()
 
         float freqHz = computePeakFreq(buffer.data(), n_read);
 
-        // Track the reading from the most recent sample each iteration,
-        // emit once per minute
         peakFreqHz = freqHz;
         counter++;
         if (counter >= Timer) {
