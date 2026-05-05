@@ -12,7 +12,6 @@ SDRThread::SDRThread() : QThread()
     threshold  = 10000.0f;
     running    = true;
     dev        = nullptr;
-    maxPower   = 0.0f;
     peakFreqHz = 0.0f;
     counter    = 0;
 }
