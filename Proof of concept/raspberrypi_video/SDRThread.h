@@ -27,7 +27,6 @@ private:
     bool running;
     rtlsdr_dev *dev;
 
-    float maxPower;
     int counter;
     float peakFreqHz;
 
