@@ -29,13 +29,13 @@ from pubsub import pub
 # Leave the list empty to log packets from ALL nodes.
 MONITORED_NODES: list[str] = [
     # "!8511ed74"  #heltec
-      "!08dc7aee"   #Sensecap
+    # "!08dc7aee"   #Sensecap
     # "!ba582d3c", #Tdeck
-    # "!27979824", #solar
+      "!27979824", #solar
 ]
 
 # Path to the output CSV file
-CSV_FILE = "battery_log_sensecap_2min.csv"
+CSV_FILE = "battery_log_Solar_2min.csv"
 
 # Serial device path (set to None for auto-detect)
 SERIAL_DEVICE = "/dev/ttyACM0" #None  # e.g., "/dev/ttyUSB0" or "/dev/ttyACM0"
