@@ -1,4 +1,6 @@
 #include <iostream>
+#include <vector>
+#include <algorithm>
 
 #include "LeptonThread.h"
 
@@ -188,35 +190,29 @@ void LeptonThread::run()
 		}
 
 		if ((autoRangeMin == true) || (autoRangeMax == true)) {
-			if (autoRangeMin == true) {
-				minValue = 65535;
-			}
-			if (autoRangeMax == true) {
-				maxValue = 0;
-			}
+			// Collect all valid pixel values for percentile-based contrast stretching.
+			// Using absolute min/max causes a single hot/cold outlier pixel to collapse
+			// the entire colormap range, making the image uniformly yellow or grey.
+			std::vector<uint16_t> pixelValues;
+			pixelValues.reserve(myImageWidth * myImageHeight);
 			for(int iSegment = iSegmentStart; iSegment <= iSegmentStop; iSegment++) {
 				for(int i=0;i<FRAME_SIZE_UINT16;i++) {
-					//skip the first 2 uint16_t's of every packet, they're 4 header bytes
-					if(i % PACKET_SIZE_UINT16 < 2) {
-						continue;
-					}
-
-					//flip the MSB and LSB at the last second
-					uint16_t value = (shelf[iSegment - 1][i*2] << 8) + shelf[iSegment - 1][i*2+1];
-					if (value == 0) {
-						// Why this value is 0?
-						continue;
-					}
-					if ((autoRangeMax == true) && (value > maxValue)) {
-						maxValue = value;
-					}
-					if ((autoRangeMin == true) && (value < minValue)) {
-						minValue = value;
-					}
+					if(i % PACKET_SIZE_UINT16 < 2) continue;
+					uint16_t v = (shelf[iSegment - 1][i*2] << 8) + shelf[iSegment - 1][i*2+1];
+					if (v == 0) continue;
+					pixelValues.push_back(v);
 				}
 			}
+			if (!pixelValues.empty()) {
+				std::sort(pixelValues.begin(), pixelValues.end());
+				int lo = (int)(pixelValues.size() * 0.02f);
+				int hi = (int)(pixelValues.size() * 0.98f);
+				if (autoRangeMin) minValue = pixelValues[lo];
+				if (autoRangeMax) maxValue = pixelValues[hi];
+				if (maxValue <= minValue) maxValue = minValue + 1;
+			}
 			diff = maxValue - minValue;
-			scale = 255/diff;
+			scale = 255.0f / diff;
 		}
 
 		int row, column;
