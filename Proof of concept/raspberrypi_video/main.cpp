@@ -1,8 +1,14 @@
 #include <QApplication>
+#include <QThread>
 #include <QMutex>
+#include <QColor>
 #include <QtDebug>
+#include <QString>
 #include <QTimer>
+#include <QDateTime>
 #include <QBuffer>
+#include <QRandomGenerator>
+#include <QtEndian>
 
 #include "LeptonThread.h"
 #include "MeshtasticBridge.h"
@@ -74,7 +80,7 @@ int main(int argc, char **argv)
         sendThread->sendImage(buffer);
     });
 
-    captureTimer->start(120000);
+    captureTimer->start(30000);
 
     if (sdrEnable) {
         SDRThread *sdrThread = new SDRThread();
