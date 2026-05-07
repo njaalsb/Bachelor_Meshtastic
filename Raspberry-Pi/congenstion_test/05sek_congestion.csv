@@ -1,4 +1,4 @@
-send_time,receive_time,transmission_time_seconds,sender_node
+"time_sent","time_received","rtt","node"
 2026-04-20 15:55:45,2026-04-20 15:55:47,2.304,!9eeff3a4
 2026-04-20 15:56:47,2026-04-20 15:56:48,1.188,!9eeff3a4
 2026-04-20 15:57:18,2026-04-20 15:57:20,2.234,!9eeff3a4
