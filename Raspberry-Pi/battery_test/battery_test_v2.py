@@ -28,14 +28,15 @@ from pubsub import pub
 # Node IDs to monitor. Add node IDs as hex strings (e.g., "!a1b2c3d4").
 # Leave the list empty to log packets from ALL nodes.
 MONITORED_NODES: list[str] = [
+    "!9eeff3a4"  #T3-S3
     # "!8511ed74"  #heltec
-    # "!08dc7aee"   #Sensecap
+    # "!08dc7aee"  #Sensecap
     # "!ba582d3c", #Tdeck
-      "!27979824", #solar
+    # "!27979824", #solar
 ]
 
 # Path to the output CSV file
-CSV_FILE = "battery_log_Solar_2min.csv"
+CSV_FILE = "T3-S3_sleep.csv"
 
 # Serial device path (set to None for auto-detect)
 SERIAL_DEVICE = "/dev/ttyACM0" #None  # e.g., "/dev/ttyUSB0" or "/dev/ttyACM0"

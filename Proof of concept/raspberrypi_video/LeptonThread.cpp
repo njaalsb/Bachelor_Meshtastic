@@ -18,7 +18,7 @@ LeptonThread::LeptonThread() : QThread()
 	loglevel = 0;
 
 	//
-	typeColormap = 3; // 1:colormap_rainbow  /  2:colormap_grayscale  /  3:colormap_ironblack(default)
+	typeColormap = 2; // 1:colormap_rainbow  /  2:colormap_grayscale  /  3:colormap_ironblack
 	selectedColormap = colormap_ironblack;
 	selectedColormapSize = get_size_colormap_ironblack();
 

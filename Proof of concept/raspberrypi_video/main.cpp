@@ -17,7 +17,7 @@
 
 int main(int argc, char **argv)
 {
-    int typeColormap = 3;
+    int typeColormap = 2;
     int typeLepton   = 3;
     int spiSpeed     = 20;
     int rangeMin     = -1;
