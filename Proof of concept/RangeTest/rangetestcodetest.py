@@ -7,33 +7,13 @@ import time
 from datetime import datetime
 
 CSV_FILE = "direct_packets.csv"
-FIELDNAMES = ["timestamp", "from_node", "portnum", "snr", "rssi", "hops", "payload"]
-
-IGNORE_PORTS = {"TELEMETRY_APP"}
+FIELDNAMES = ["timestamp", "from_node", "portnum", "snr", "rssi", "hops"]
 
 def ensure_csv():
     if not os.path.exists(CSV_FILE):
         with open(CSV_FILE, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
             writer.writeheader()
-
-def extract_payload(decoded):
-    portnum = decoded.get("portnum", "")
-    if portnum == "RANGE_TEST_APP":
-        rt = decoded.get("rangeTest", {})
-        parts = []
-        if "seq" in rt:
-            parts.append(f"seq={rt['seq']}")
-        if "success" in rt:
-            parts.append(f"success={rt['success']}")
-        return ", ".join(parts) if parts else "N/A"
-    elif portnum == "TEXT_MESSAGE_APP":
-        return decoded.get("text", "N/A")
-    elif portnum == "NODEINFO_APP":
-        u = decoded.get("user", {})
-        return f"{u.get('longName', '?')} ({u.get('shortName', '?')})"
-    else:
-        return str(decoded.get("payload", "N/A"))
 
 def on_receive(packet, interface):
     try:
@@ -42,17 +22,11 @@ def on_receive(packet, interface):
         hops = hop_start - hop_limit
 
         if hops != 0:
-            return
+            return  # Ignore anything that was relayed
 
-        decoded = packet.get("decoded", {})
-        portnum = decoded.get("portnum", "UNKNOWN")
-
-        if portnum in IGNORE_PORTS:
-            return
-
-        snr     = packet.get("rxSnr")
-        rssi    = packet.get("rxRssi")
-        payload = extract_payload(decoded)
+        snr  = packet.get("rxSnr")
+        rssi = packet.get("rxRssi")
+        portnum = packet.get("decoded", {}).get("portnum", "UNKNOWN")
 
         row = {
             "timestamp": datetime.now().isoformat(),
@@ -61,14 +35,13 @@ def on_receive(packet, interface):
             "snr":       snr if snr is not None else "N/A",
             "rssi":      rssi if rssi is not None else "N/A",
             "hops":      hops,
-            "payload":   payload,
         }
 
         with open(CSV_FILE, "a", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
             writer.writerow(row)
 
-        print(f"[{row['timestamp']}] FROM={row['from_node']} | PORT={portnum} | SNR={row['snr']} | RSSI={row['rssi']} | {payload}")
+        print(f"[{row['timestamp']}] FROM={row['from_node']} | PORT={portnum} | SNR={row['snr']} | RSSI={row['rssi']}")
 
     except Exception as e:
         print(f"Error processing packet: {e}")
