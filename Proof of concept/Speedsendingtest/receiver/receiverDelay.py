@@ -8,7 +8,7 @@ from pubsub import pub
 import time
 
 # Configuration
-CSV_FILE = 'meshtastic_test_results.csv'
+CSV_FILE = 'meshtastic_test_results_1seconds_231bytes.csv'
 
 # State tracking
 received_count = 0
@@ -17,7 +17,6 @@ results = []
 
 def on_receive(packet, interface):
     global received_count, last_seq
-    
     try:
         if 'decoded' in packet and packet['decoded']['portnum'] == 'TEXT_MESSAGE_APP':
             message = packet['decoded']['text']
@@ -57,8 +56,8 @@ def signal_handler(sig, frame):
 
 # Setup Listener
 signal.signal(signal.SIGINT, signal_handler)
-interface = meshtastic.serial_interface.SerialInterface()
 pub.subscribe(on_receive, "meshtastic.receive")
+interface = meshtastic.serial_interface.SerialInterface(devPath="COM20")
 
 print(f"Listening for packets")
 
