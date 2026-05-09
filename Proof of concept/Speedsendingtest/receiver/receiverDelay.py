@@ -8,7 +8,7 @@ from pubsub import pub
 import time
 
 # Configuration
-CSV_FILE = 'meshtastic_test_results_1seconds_231bytes.csv'
+CSV_FILE = 'longfast_meshtastic_test_results_1seconds_231bytes.csv'
 
 # State tracking
 received_count = 0
@@ -57,7 +57,7 @@ def signal_handler(sig, frame):
 # Setup Listener
 signal.signal(signal.SIGINT, signal_handler)
 pub.subscribe(on_receive, "meshtastic.receive")
-interface = meshtastic.serial_interface.SerialInterface(devPath="COM20")
+interface = meshtastic.serial_interface.SerialInterface()
 
 print(f"Listening for packets")
 
