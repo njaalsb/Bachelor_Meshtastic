@@ -4,11 +4,11 @@ import os
 
 # Configuration
 files = {
-    1: 'meshtastic_test_results_1second_150bytes.csv',
-    2: 'meshtastic_test_results_2seconds_150bytes.csv',
-    3: 'meshtastic_test_results_3seconds_150bytes.csv',
-    4: 'meshtastic_test_results_4seconds_150bytes.csv',
-    5: 'meshtastic_test_results_5seconds_150bytes.csv'
+    1: 'shortfast_meshtastic_test_results_0dot2seconds_231bytes.csv',
+    2: 'shortfast_meshtastic_test_results_0dot5seconds_231bytes.csv',
+    3: 'shortfast_meshtastic_test_results_1seconds_231bytes.csv',
+    4: 'shortfast_meshtastic_test_results_2seconds_231bytes.csv',
+    5: 'shortfast_meshtastic_test_results_3seconds_231bytes.csv'
 }
 TOTAL_SENT = 100
 
@@ -39,7 +39,7 @@ plt.plot(delays, received_counts, marker='o', linestyle='-',
          color='#2980b9', linewidth=2.5, markersize=10, label='Packets Received')
 
 # Title and Labels
-plt.title('150 Bytes', fontsize=14)
+plt.title('231 Bytes - Short Fast', fontsize=14)
 plt.xlabel('Delay Between Packets (Seconds)', fontsize=12)
 plt.ylabel('Number of Packets Received (Out of 100)', fontsize=12)
 
