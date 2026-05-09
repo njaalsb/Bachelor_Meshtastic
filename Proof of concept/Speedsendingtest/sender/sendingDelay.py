@@ -4,7 +4,7 @@ import time
 
 interface = meshtastic.serial_interface.SerialInterface(devPath='/dev/ttyACM1')
 
-def send_test_packets(count=100, delay=10):
+def send_test_packets(count=100, delay=0.05):
     target_bytes = 231
     print(f"Sending {count} packets at {target_bytes} bytes each...")
     
@@ -21,7 +21,7 @@ def send_test_packets(count=100, delay=10):
         try:
             # Verify length before sending
             print(f"Sending Packet {i} (Length: {len(message.encode('utf-8'))} bytes)")
-            interface.sendText(message)
+            interface.sendText(message, wantAck=False)
             time.sleep(delay)
             
         except Exception as e:
@@ -32,4 +32,4 @@ def send_test_packets(count=100, delay=10):
     interface.close()
 
 if __name__ == "__main__":
-    send_test_packets(count=100, delay=10)
+    send_test_packets(count=100, delay=0.05)
