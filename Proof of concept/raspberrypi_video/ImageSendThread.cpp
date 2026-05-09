@@ -46,12 +46,12 @@ void ImageSendThread::run()
         for (int idx = 0; idx < total; idx++) {
             QByteArray payload = buffer.mid(idx * MAX_PAYLOAD, MAX_PAYLOAD);
 
-            QByteArray packet(8, 0);
+            QByteArray packet(5, 0);
             packet[0] = (char)PACKET_TYPE_IMG;
             packet[1] = (char)sid;
-            qToBigEndian((quint16)total,        (uchar*)packet.data() + 2);
-            qToBigEndian((quint16)idx,           (uchar*)packet.data() + 4);
-            qToBigEndian((quint16)payload.size(),(uchar*)packet.data() + 6);
+            packet[2] = (char)total;
+            packet[3] = (char)idx;
+            packet[4] = (char)payload.size();
             packet.append(payload);
 
             MeshtasticBridge::instance().sendRawData(packet, PORTNUM_ATAK_FORWARDER);
