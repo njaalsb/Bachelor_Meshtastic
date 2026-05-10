@@ -12,7 +12,6 @@
 
 #include "LeptonThread.h"
 #include "MeshtasticBridge.h"
-#include "SDRThread.h"
 #include "ImageSendThread.h"
 
 int main(int argc, char **argv)
@@ -23,9 +22,6 @@ int main(int argc, char **argv)
     int rangeMin     = -1;
     int rangeMax     = -1;
     int loglevel     = 0;
-    bool sdrEnable   = false;
-    uint32_t sdrFreq = 869525000;
-    float sdrThresh  = 10000.0f;
 
     QApplication a(argc, argv);
 
@@ -81,22 +77,6 @@ int main(int argc, char **argv)
     });
 
     captureTimer->start(30000);
-
-    if (sdrEnable) {
-        SDRThread *sdrThread = new SDRThread();
-        sdrThread->setFrequency(sdrFreq);
-        sdrThread->setThreshold(sdrThresh);
-        QObject::connect(sdrThread, &SDRThread::signalUpdate, [](float peakFreqHz) {
-            QByteArray payload;
-            payload.resize(6);
-            payload[0] = 0x03;
-            payload[1] = 0x01;
-
-            memcpy(payload.data() + 2, &peakFreqHz, sizeof(float));
-            MeshtasticBridge::instance().sendRawData(payload, 257);
-        });
-        sdrThread->start();
-    }
 
     MeshtasticBridge::instance().sendMessage("test");
     return a.exec();

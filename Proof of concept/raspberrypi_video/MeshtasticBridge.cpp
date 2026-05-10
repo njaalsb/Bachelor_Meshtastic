@@ -19,14 +19,17 @@ MeshtasticBridge::~MeshtasticBridge() {
 
 void MeshtasticBridge::startBridge() {
     qDebug() << "starting meshtastic bridge";
+
+    m_process.setProcessChannelMode(QProcess::MergedChannels);
+
     m_process.start("python3", QStringList() << "meshtasticSendMessage.py");
     if (!m_process.waitForStarted())
-        qCritical() << "failed to start bridge";
+        qCritical() << "klarte ikke å starte bridgen";
 }
 
 void MeshtasticBridge::sendMessage(const QString &text) {
     if (m_process.state() != QProcess::Running) {
-        qWarning() << "bridge failed, restarting";
+        qWarning() << "bridge feilet, starter på nytt";
         startBridge();
     }
     m_process.write(text.toUtf8() + "\n");
@@ -35,7 +38,7 @@ void MeshtasticBridge::sendMessage(const QString &text) {
 
 void MeshtasticBridge::sendRawData(const QByteArray &data, int portNum) {
     if (m_process.state() != QProcess::Running) {
-        qWarning() << "bridge failed, restarting";
+        qWarning() << "bridge feilet, starter på nytt";
         startBridge();
     }
     QString line = QString("DATA:%1:%2").arg(portNum).arg(QString::fromLatin1(data.toHex()));
