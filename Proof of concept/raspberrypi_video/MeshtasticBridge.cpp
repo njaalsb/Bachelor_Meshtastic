@@ -20,7 +20,6 @@ MeshtasticBridge::~MeshtasticBridge() {
 void MeshtasticBridge::startBridge() {
     qDebug() << "starting meshtastic bridge";
 
-    m_process.setProcessChannelMode(QProcess::MergedChannels);
 
     m_process.start("python3", QStringList() << "meshtasticSendMessage.py");
     if (!m_process.waitForStarted())

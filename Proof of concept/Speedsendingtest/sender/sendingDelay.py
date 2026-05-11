@@ -32,4 +32,4 @@ def send_test_packets(count=100, delay=0.05):
     interface.close()
 
 if __name__ == "__main__":
-    send_test_packets(count=100, delay=0.05)
+    send_test_packets(count=100, delay=2)

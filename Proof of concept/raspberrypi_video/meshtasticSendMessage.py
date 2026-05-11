@@ -8,7 +8,7 @@ import threading
 sdr_enabled = True 
 sdr_freq = 869525000
 sdr_gain = 'auto'
-sdr_interval = 60
+sdr_interval = 10
 sdr_threshold = -20
 
 
@@ -38,10 +38,10 @@ def sdr_listen(iface):
         psd_db = 10 * np.log10(psd + 1e-10)
         freqs  = np.fft.fftshift(np.fft.fftfreq(len(samples), 1 / sdr.sample_rate))
 
-        # Nullstill DC-spike
+
         psd_db[np.abs(freqs) < 10_000] = -999.0
 
-        # Finn topp i vindu
+  
         idx = int(np.argmax(psd_db))
         if psd_db[idx] > peak_power:
             peak_power = float(psd_db[idx])
@@ -64,7 +64,8 @@ def sdr_listen(iface):
 
 def main():
     try:
-        iface = meshtastic.serial_interface.SerialInterface(devPath='/dev/ttyACM0')
+        iface1 = meshtastic.serial_interface.SerialInterface(devPath='/dev/ttyACM0')
+        iface2 = meshtastic.serial_interface.SerialInterface(devPath='/dev/ttyACM1')
     except Exception as e:
         print("[bridge] feil ved åpning: {}".format(e), flush=True)
         sys.exit(1)
@@ -73,7 +74,7 @@ def main():
 
 
     if sdr_enabled:
-        t = threading.Thread(target=sdr_listen, args=(iface,), daemon=True)
+        t = threading.Thread(target=sdr_listen, args=(iface2,), daemon=True)
         t.start()
 
   
@@ -86,17 +87,17 @@ def main():
                 if msg.startswith("DATA:"):
                     _, port_str, hex_str = msg.split(":", 2)
                     payload = bytes.fromhex(hex_str)
-                    iface.sendData(payload, portNum=int(port_str), wantAck=False)
+                    iface1.sendData(payload, portNum=int(port_str), wantAck=False)
                     print("[bridge] tx port={} bytes={}".format(port_str, len(payload)), flush=True)
                 else:
-                    iface.sendText(msg)
+                    iface1.sendText(msg)
                     print("[bridge] tx tekst: {}".format(msg[:40]), flush=True)
             except Exception as e:
                 print("[bridge] send feil: {}".format(e), flush=True)
     except KeyboardInterrupt:
         pass
     finally:
-        iface.close()
+        iface1.close()
         print("[bridge] lukket", flush=True)
 
 
