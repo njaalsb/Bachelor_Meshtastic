@@ -25,8 +25,8 @@ private:
     QMutex      m_mutex;
     bool        m_busy = false;
 
-    static constexpr int MAX_PAYLOAD     = 226;
-    static constexpr int CHUNK_DELAY_MS  = 3000;
+    static constexpr int MAX_PAYLOAD     = 150;
+    static constexpr int CHUNK_DELAY_MS  = 60000;
     static constexpr int PORTNUM_ATAK_FORWARDER = 257;
     static constexpr quint8 PACKET_TYPE_IMG = 0x02;
 };

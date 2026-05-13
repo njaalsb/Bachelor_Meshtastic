@@ -8,7 +8,7 @@ import threading
 sdr_enabled = True 
 sdr_freq = 869525000
 sdr_gain = 'auto'
-sdr_interval = 10
+sdr_interval = 143
 sdr_threshold = -20
 
 
@@ -65,7 +65,7 @@ def sdr_listen(iface):
 def main():
     try:
         iface1 = meshtastic.serial_interface.SerialInterface(devPath='/dev/ttyACM0')
-        iface2 = meshtastic.serial_interface.SerialInterface(devPath='/dev/ttyACM1')
+        #iface2 = meshtastic.serial_interface.SerialInterface(devPath='/dev/ttyACM1')
     except Exception as e:
         print("[bridge] feil ved åpning: {}".format(e), flush=True)
         sys.exit(1)
@@ -74,7 +74,7 @@ def main():
 
 
     if sdr_enabled:
-        t = threading.Thread(target=sdr_listen, args=(iface2,), daemon=True)
+        t = threading.Thread(target=sdr_listen, args=(iface1,), daemon=True)
         t.start()
 
   

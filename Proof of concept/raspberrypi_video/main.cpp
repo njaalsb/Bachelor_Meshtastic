@@ -68,7 +68,7 @@ int main(int argc, char **argv)
         QByteArray buffer;
         QBuffer buf(&buffer);
         buf.open(QIODevice::WriteOnly);
-        image.save(&buf, "WEBP", 40);
+        image.save(&buf, "WEBP", 15);
         buf.close();
 
         qDebug() << "Compressed" << buffer.size() << "bytes ->" << ((buffer.size() + 222) / 223) << "chunks";
@@ -76,7 +76,7 @@ int main(int argc, char **argv)
         sendThread->sendImage(buffer);
     });
 
-    captureTimer->start(30000);
+    captureTimer->start(300000);
 
     MeshtasticBridge::instance().sendMessage("test");
     return a.exec();
