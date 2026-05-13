@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 # felles
 lambda_868 = 0.345 #m
 
-distance = np.linspace(1, 200000, 200)
+distance = np.linspace(1, 150000, 200)
 
 # T3 S3
 
@@ -52,8 +52,8 @@ def g(d):
 def h(d):
     return P_sens_high
 
-plt.plot(distance,f(distance, P_tx_dipol, G_tx_dipol, G_tx_dipol,ml=-2*0.57), label="dipol")
-plt.plot(distance, f(distance, P_tx_t3s3, G_tx_t3s3, G_tx_t3s3, ml=-2*1.76), label="T3S3")
+plt.plot(distance,f(distance, P_tx_dipol, G_tx_dipol, G_tx_dipol,ml=-2*0.584), label="dipol")
+plt.plot(distance, f(distance, P_tx_t3s3, G_tx_t3s3, G_tx_t3s3, ml=-2*2.204), label="T3S3")
 plt.plot(distance, f(distance, P_tx_mono_long, G_tx_mono_long, G_tx_mono_long), label="Monopol_long")
 plt.plot(distance,f(distance, P_tx_mono_short, G_tx_mono_short, G_tx_mono_short), label="Monopol_short")
 plt.plot(distance,f(distance, P_tx_pv, G_tx_pv, G_tx_pv), label="PV")
