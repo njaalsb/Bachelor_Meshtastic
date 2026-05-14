@@ -1,0 +1,9 @@
+lat_2, lon_2 = 63.3948938, 10.4876772 # Estenstadshytta
+lat_2, lon_2 = 63.4212331, 10.2529852 # Gråkallen
+lat_1, lon_1 = 63.4307656, 10.4274003 # Kuhaugen
+lat_1,lon_1 = 63.4371437, 10.3914343 # Piren
+lat_2,lon_2 = 63.4192163, 10.3998152 # gløs
+
+# Ny topp
+lat = 63.4512696
+lon = 10.2484850

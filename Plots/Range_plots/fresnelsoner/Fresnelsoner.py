@@ -10,9 +10,10 @@ import math
 #lat_1, lon_1 = 63.4192163, 10.3998152
 #lat_2, lon_2 = 63.3949314, 10.4879423 
 #lat_1, lon_1 = 63.4307656, 10.4274003 # Kuhaugen
-#lat_2, lon_2 = 63.3948938, 10.4876772 # Estenstadshytta
-lat_1,lon_1 = 63.4371437, 10.3914343 # Piren
-lat_2,lon_2 = 63.4192163, 10.3998152 # gløs
+lat_1,lon_1 = 63.4316976, 10.4325943
+lat_2, lon_2 = 63.3948938, 10.4876772 # Estenstadshytta
+#lat_1,lon_1 = 63.4371437, 10.3914343 # Piren
+#lat_2,lon_2 = 63.4192163, 10.3998152 # gløs
 #lat_1,lon_1 = 
 #lat_2,lon_2 = 
 
@@ -21,7 +22,7 @@ freq = 869.525e6  # Hz
 c = 3e8           # m/s
 wavelength = c / freq
 
-API_KEY = "ta_dej_en_bolle"  
+API_KEY = "How_stupid_do_u_think_I_am"  
 N_SAMPLES = 100
 
 
@@ -93,7 +94,7 @@ ax.set_xlabel("Avstand (km)")
 ax.set_ylabel("Høyde (m o.h.)")
 ax.set_title(
     f"Høydeprofil og 1. Fresnelsone\n"
-    f"St. Olavs pir 2 → Gløshaugen  |  f = {freq / 1e6:.3f} MHz  |  D = {D / 1000:.2f} km"
+    f"Kuhaugen → Estenstadshytta  |  f = {freq / 1e6:.3f} MHz  |  D = {D / 1000:.2f} km"
 )
 ax.legend()
 ax.grid(True, alpha=0.3)
