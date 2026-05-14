@@ -8,7 +8,7 @@ from pubsub import pub
 import time
 
 # Configuration
-CSV_FILE = 'longfast_meshtastic_test_results_1seconds_231bytes.csv'
+CSV_FILE = 'shortfast_meshtastic_test_results_1seconds_20bytes.csv'
 
 # State tracking
 received_count = 0
