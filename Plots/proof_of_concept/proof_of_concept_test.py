@@ -41,11 +41,15 @@ FIGSTR     = (14, 16)   # Figurstørrelse i tommer
 #
 SENDERE = [
     {"name": "Estenstadshytta", "lat": 63.3948938, "lon": 10.4876772},
-    #{"name": "Gråkallen", "lat": 63.4212331,"lon": 10.2529852},
+    {"name": "Gråkallen", "lat": 63.4212331,"lon": 10.2529852},
     {"name": "St. Olavs Pir","lat": 63.4371437, "lon": 10.3914343},
     {"name": "Kuhaugen", "lat": 63.4307656, "lon": 10.4274003},
-    {"name": "Gløshaugen", "lat": 63.4192163, "lon": 10.3998152 }
-    # {"name": "TX2", "lat": 63.410, "lon": 10.460},   # ← Eksempel: fjern # for å aktivere
+    {"name": "Gløshaugen", "lat": 63.4192163, "lon": 10.3998152 },
+    {"name": "Ukjent node", "lat": 63.4126330, "lon": 10.3546880},
+    {"name": "bcdf", "lat": 63.4322940, "lon": 10.3612410},
+    #{"name": "Ukjent", "lat": 63.3823230, "lon": 10.4062970},
+    {"name": "b058", "lat": 63.3839610, "lon" : 10.4062970},
+    {"name": "0ddc", "lat": 63.4126330, "lon" : 10.4071160}
 ]
 
 # ── LINJER MELLOM SENDERE ─────────────────────────────────────────────────────
@@ -54,14 +58,18 @@ SENDERE = [
 # Bruk [] hvis du ikke vil ha noen linjer.
 #
 LINJER = [
-    # ("Estenstadshytta", "TX2"),   # ← Eksempel
-    #("Estenstadshytta", "Gråkallen"),
+    ("Gråkallen", "b058"),
+    ("b058", "bcdf"),
+    ("bcdf", "Gløshaugen")
     #("Gråkallen", "St. Olavs Pir"),
-    ("Estenstadshytta", "Kuhaugen"),
-    ("Kuhaugen", "St. Olavs Pir"),
+    #("Estenstadshytta", "Kuhaugen"),
+    #("Kuhaugen", "St. Olavs Pir"),
     #("Gløshaugen", "Gråkallen"),
     #("Gråkallen", "Kuhaugen"),
-    ("Gløshaugen", "Kuhaugen")
+    #("Gløshaugen", "Kuhaugen")
+    #("Gløshaugen", "bcdf"),
+    #("bcdf", "St. Olavs Pir")
+    #("b058", "bcdf")
 ]
 
 # ── LINJEUTSEENDE ─────────────────────────────────────────────────────────────
@@ -91,10 +99,10 @@ ZOOM_YMAX = 7036000     # Nordgrense  (meter nord)
 
 # WGS84 lat/lon – sett ZOOM_FRA_LATLON = True for å bruke disse i stedet:
 ZOOM_FRA_LATLON = True
-ZOOM_LAT_MIN    = 63.3869     # Sørgrense  (grader nord)   
+ZOOM_LAT_MIN    = 63.3750748     # Sørgrense  (grader nord)   
 ZOOM_LAT_MAX    = 63.4512696     # Nordgrense (grader nord)
 ZOOM_LON_MIN    = 10.2484850     # Vestgrense (grader øst)
-ZOOM_LON_MAX    = 10.499     # Østgrense  (grader øst)
+ZOOM_LON_MAX    = 10.501     # Østgrense  (grader øst)
 
 # ── UTSEENDE ─────────────────────────────────────────────────────────────────
 TX_FARGER = ['#e63946', '#457b9d', '#2a9d8f', '#e9c46a', '#f4a261']
