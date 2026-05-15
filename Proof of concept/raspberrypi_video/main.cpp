@@ -68,10 +68,10 @@ int main(int argc, char **argv)
         QByteArray buffer;
         QBuffer buf(&buffer);
         buf.open(QIODevice::WriteOnly);
-        image.save(&buf, "WEBP", 15);
+        image.save(&buf, "WEBP", 40);
         buf.close();
 
-        qDebug() << "Compressed" << buffer.size() << "bytes ->" << ((buffer.size() + 222) / 223) << "chunks";
+        qDebug() << "Compressed" << buffer.size() << "bytes ->" << ((buffer.size() + 200) / 200) << "chunks";
 
         sendThread->sendImage(buffer);
     });
