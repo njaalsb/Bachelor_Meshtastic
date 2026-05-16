@@ -7,7 +7,7 @@ import matplotlib.colors as mcolors
 
 def discover_devices(csv_dir):
     """Auto-discover TX and RX devices separately from filenames like tx_DEVICE1_rx_DEVICE2.csv"""
-    pattern = re.compile(r"^tx_(.+)_rx_(.+)\.csv$")
+    pattern = re.compile(r"^u_tx_(.+)_rx_(.+)\.csv$")
     tx_devices = set()
     rx_devices = set()
     for fname in os.listdir(csv_dir):
@@ -67,7 +67,7 @@ def build_matrix(csv_dir, col_hint, tx_devices, rx_devices):
 
     for i, tx in enumerate(tx_devices):
         for j, rx in enumerate(rx_devices):
-            fp = os.path.join(csv_dir, f"tx_{tx}_rx_{rx}.csv")
+            fp = os.path.join(csv_dir, f"u_tx_{tx}_rx_{rx}.csv")
             avg, count = read_avg(fp, col_hint)
             if avg is not None:
                 data[i, j] = avg
@@ -137,10 +137,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv-dir", default="./data",
                         help="Directory containing tx_X_rx_Y.csv files")
-    parser.add_argument("--col", default="rssi",
-                        help="Column to plot, e.g. 'rssi' or 'rx snr' (default: rssi)")
-    parser.add_argument("--out", default="matrix.png",
-                        help="Output image path")
+    parser.add_argument("--col", default=None,
+                        help="Column to plot, e.g. 'rssi' or 'rx snr'. "
+                             "If omitted, plots SNR then RSSI sequentially.")
+    parser.add_argument("--out", default=None,
+                        help="Output image path. If omitted, defaults to "
+                             "'matrix_snr.png' / 'matrix_rssi.png' for sequential mode, "
+                             "or 'matrix.png' for single-col mode.")
     args = parser.parse_args()
 
     tx_devices, rx_devices = discover_devices(args.csv_dir)
@@ -150,5 +153,16 @@ if __name__ == "__main__":
 
     print(f"TX devices: {tx_devices}")
     print(f"RX devices: {rx_devices}")
-    data, msg_counts = build_matrix(args.csv_dir, args.col, tx_devices, rx_devices)
-    plot_matrix(data, msg_counts, tx_devices, rx_devices, args.out, args.col)
+
+    if args.col is not None:
+        # Single-metric mode (original behaviour)
+        out = args.out or "matrix.png"
+        data, msg_counts = build_matrix(args.csv_dir, args.col, tx_devices, rx_devices)
+        plot_matrix(data, msg_counts, tx_devices, rx_devices, out, args.col)
+    else:
+        # Sequential mode: SNR first, then RSSI after the window is closed
+        for col_hint, default_out in [("rx snr", "matrix_snr.png"), ("rssi", "matrix_rssi.png")]:
+            out = args.out or default_out
+            print(f"\nPlotting {col_hint.upper()} → {out}")
+            data, msg_counts = build_matrix(args.csv_dir, col_hint, tx_devices, rx_devices)
+            plot_matrix(data, msg_counts, tx_devices, rx_devices, out, col_hint)
