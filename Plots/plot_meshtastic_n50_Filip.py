@@ -26,13 +26,13 @@ UTFIL      = "Graakallen_estenstad_filip.png"
 OPPLOSNING = 200        # DPI
 FIGSTR     = (14, 16)   # Figurstørrelse i tommer
 
-# ── NEW MANUALLY DEFINED NODES ───────────────────────────────────────────────
-NODE_1_LAT, NODE_1_LON = 63.418969, 10.402455  # TX Node
-NODE_2_LAT, NODE_2_LON = 63.416946, 10.406386  # RX Node
+# ── OPPDATERTE KOORDINATER ───────────────────────────────────────────────────
+NODE_1_LAT, NODE_1_LON = 63.418140, 10.404026  # Ny TX Node-posisjon
+NODE_2_LAT, NODE_2_LON = 63.416946, 10.406386  # RX Node (forblir uendret)
 
 # ── ZOOM / KARTUTSNITT ───────────────────────────────────────────────────────
 ZOOM_MODUS   = "auto"      
-MARGIN_METER = 500         # Reduced margin to get a closer view of these two nodes
+MARGIN_METER = 500         # Buffer rundt nodene i meter
 
 # ─────────────────────────────────────────────────────────────────────────────
 # KOORDINATKONVERTERING
@@ -43,11 +43,11 @@ to_utm = Transformer.from_crs("EPSG:4326", "EPSG:25832", always_xy=True)
 def wgs84_til_utm(lat, lon):
     return to_utm.transform(lon, lat)
 
-# Convert our two specific manual nodes to UTM
+# Konverter de to spesifikke nodene til UTM
 node1_x, node1_y = wgs84_til_utm(NODE_1_LAT, NODE_1_LON)
 node2_x, node2_y = wgs84_til_utm(NODE_2_LAT, NODE_2_LON)
 
-# Calculate bounding box around our two specific nodes
+# Beregn boks basert på de nye posisjonene
 xmin = min(node1_x, node2_x) - MARGIN_METER
 xmax = max(node1_x, node2_x) + MARGIN_METER
 ymin = min(node1_y, node2_y) - MARGIN_METER
@@ -137,18 +137,15 @@ if len(veglenke):
 if len(bane):
     bane.plot(ax=ax, color='#444440', linewidth=1.5, alpha=0.85, linestyle='--')
 
-# ── PLOT THE TWO MANUALLY FIXED NODES ────────────────────────────────────────
+# ── PLOT NODENE ──────────────────────────────────────────────────────────────
 
-# 1. Clean line directly between the nodes (No text boxes along the line)
-ax.plot([node1_x, node2_x], [node1_y, node2_y], 'k--', linewidth=1.2, alpha=0.6, zorder=5)
-
-# 2. Plot TX Node (Red Triangle)
+# 1. Plot TX Node (Rød trekant - Ny posisjon)
 ax.scatter(node1_x, node1_y, c='#e63946', s=220, zorder=20, marker='^', edgecolors='white', linewidths=1.5)
 ax.annotate('TX', (node1_x, node1_y), textcoords='offset points', xytext=(8, 6),
             fontsize=8, fontweight='bold', color='#111111',
             bbox=dict(boxstyle='round,pad=0.25', facecolor='white', alpha=0.8, edgecolor='none'))
 
-# 3. Plot RX Node (Dark Slate Triangle)
+# 2. Plot RX Node (Mørkegrå trekant)
 ax.scatter(node2_x, node2_y, c='#343a40', s=220, zorder=20, marker='^', edgecolors='white', linewidths=1.5)
 ax.annotate('RX', (node2_x, node2_y), textcoords='offset points', xytext=(8, 6),
             fontsize=8, fontweight='bold', color='#111111',
@@ -162,13 +159,12 @@ legend_el = [
     Line2D([0],[0], color='#b8956e', linewidth=1.2, label='Høydekurver'),
     Line2D([0],[0], marker='^', color='w', markerfacecolor='#e63946', markersize=10, markeredgecolor='white', label="TX Node"),
     Line2D([0],[0], marker='^', color='w', markerfacecolor='#343a40', markersize=10, markeredgecolor='white', label="RX Node")
-    #Line2D([0],[0], color='k', linestyle='--', linewidth=1.2, label="TX-RX linje")
 ]
 
 ax.legend(handles=legend_el, loc='upper left', fontsize=8, framealpha=0.92, fancybox=True, shadow=True)
 
 # --- Rutenett og tittel ---
-ax.set_title('Meshtastic rekkeviddetest\nN50 kartgrunnlag (Kartverket)', fontsize=14, fontweight='bold', pad=14)
+ax.set_title('Meshtastic rekkeviddetest: kort distanse urbant område\nN50 kartgrunnlag (Kartverket)', fontsize=14, fontweight='bold', pad=14)
 ax.set_xlabel('UTM Øst (m)',  fontsize=9)
 ax.set_ylabel('UTM Nord (m)', fontsize=9)
 ax.tick_params(labelsize=8)
@@ -178,7 +174,7 @@ ax.grid(True, linewidth=0.3, alpha=0.4, color='#888888')
 skala_m = 500
 scale_x = xmin + (xmax - xmin) * 0.05
 scale_y = ymin + (ymax - ymin) * 0.03
-#ax.plot([scale_x, scale_x + skala_m], [scale_y, scale_y], 'k-', linewidth=3, zorder=25)
+ax.plot([scale_x, scale_x + skala_m], [scale_y, scale_y], 'k-', linewidth=3, zorder=25)
 ax.text(scale_x + skala_m / 2, scale_y + (ymax - ymin) * 0.009, f'{skala_m} m', ha='center', fontsize=8, fontweight='bold')
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -7,7 +7,7 @@ import matplotlib.colors as mcolors
 
 def discover_devices(csv_dir):
     """Auto-discover TX and RX devices separately from filenames like tx_DEVICE1_rx_DEVICE2.csv"""
-    pattern = re.compile(r"^u_tx_(.+)_rx_(.+)\.csv$")
+    pattern = re.compile(r"^ul_tx_(.+)_rx_(.+)\.csv$")
     tx_devices = set()
     rx_devices = set()
     for fname in os.listdir(csv_dir):
@@ -67,7 +67,7 @@ def build_matrix(csv_dir, col_hint, tx_devices, rx_devices):
 
     for i, tx in enumerate(tx_devices):
         for j, rx in enumerate(rx_devices):
-            fp = os.path.join(csv_dir, f"u_tx_{tx}_rx_{rx}.csv")
+            fp = os.path.join(csv_dir, f"ul_tx_{tx}_rx_{rx}.csv")
             avg, count = read_avg(fp, col_hint)
             if avg is not None:
                 data[i, j] = avg
@@ -91,7 +91,7 @@ def plot_matrix(data, msgs, tx_devices, rx_devices, out_path, col_hint):
     vmin, vmax = (-128, -90) if is_rssi else (-20, 10)
     unit = "dBm" if is_rssi else "dB"
     colorbar_label = f"Avg RSSI ({unit})" if is_rssi else f"Avg SNR ({unit})"
-    title = "Meshtastic RSSI Matrix: All Combinations" if is_rssi else "Meshtastic SNR Matrix: All Combinations"
+    title = "Meshtastic RSSI Matrise: Urban lang" if is_rssi else "Meshtastic SNR Matrise: Urban lang"
 
     norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
 
@@ -119,8 +119,8 @@ def plot_matrix(data, msgs, tx_devices, rx_devices, out_path, col_hint):
     ax.xaxis.tick_top()
     ax.set_xticklabels(rx_labels, rotation=30, ha="left", fontweight="bold")
     ax.set_yticklabels(tx_labels, fontweight="bold")
-    ax.set_xlabel("Receiver (RX)", fontsize=12, fontweight="bold")
-    ax.set_ylabel("Transmitter (TX)", fontsize=12, fontweight="bold")
+    ax.set_xlabel("Mottaker (RX)", fontsize=12, fontweight="bold")
+    ax.set_ylabel("Sender (TX)", fontsize=12, fontweight="bold")
     ax.set_xlim(-0.5, n_rx - 0.5)
     ax.set_ylim(n_tx - 0.5, -0.5)
 
