@@ -8,10 +8,3 @@ Dersom man flasher en meshtastic enhet vil firmwaren whipes fra flash-minnet. Fo
 
 For å flashe må boot holdes inne.
 
-### Innlogging
-
-- Bruk fosen1 tailnet
-
-```bash
-ssh meshtastic@raspberrypi
-```
