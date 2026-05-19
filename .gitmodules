@@ -1,3 +1,6 @@
 [submodule "Meshtastic-ATAK-plugin"]
-	path = Meshtastic-ATAK-plugin
+    path = Proof of concept/Meshtastic-ATAK-plugin
+    url = https://github.com/njaalsb/Meshtastic-ATAK-plugin
+[submodule "Proof of concept/Meshtastic-ATAK-plugin"]
+	path = Proof of concept/Meshtastic-ATAK-plugin
 	url = https://github.com/njaalsb/Meshtastic-ATAK-plugin
