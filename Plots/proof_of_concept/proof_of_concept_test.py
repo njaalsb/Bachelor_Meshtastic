@@ -44,11 +44,11 @@ SENDERE = [
     {"name": "Gråkallen", "lat": 63.4212331,"lon": 10.2529852},
     {"name": "St. Olavs Pir","lat": 63.4371437, "lon": 10.3914343},
     {"name": "Kuhaugen", "lat": 63.4307656, "lon": 10.4274003},
-    {"name": "Gløshaugen", "lat": 63.4192163, "lon": 10.3998152 }
+    {"name": "Gløshaugen", "lat": 63.4192163, "lon": 10.3998152},
     #{"name": "Ukjent node", "lat": 63.4126330, "lon": 10.3546880},
-    #{"name": "bcdf", "lat": 63.4322940, "lon": 10.3612410},
+    {"name": "bcdf", "lat": 63.4322940, "lon": 10.3612410},
     #{"name": "Ukjent", "lat": 63.3823230, "lon": 10.4062970},
-    #{"name": "b058", "lat": 63.3839610, "lon" : 10.4062970},
+    {"name": "b058", "lat": 63.3839610, "lon" : 10.4062970}
     #{"name": "0ddc", "lat": 63.4126330, "lon" : 10.4071160}
 ]
 
@@ -58,10 +58,11 @@ SENDERE = [
 # Bruk [] hvis du ikke vil ha noen linjer.
 #
 LINJER = [
-    #("Gråkallen", "b058"),
-    #("b058", "bcdf"),
-    ("Gråkallen", "St. Olavs Pir"),
-    ("Gråkallen", "Gløshaugen")
+    ("Gråkallen", "b058"),
+    ("b058", "bcdf"),
+    ("bcdf", "Gløshaugen")
+    #("Gråkallen", "St. Olavs Pir"),
+    #("Gråkallen", "Gløshaugen")
     #("Gråkallen", "St. Olavs Pir"),
     #("Estenstadshytta", "Kuhaugen"),
     #("Kuhaugen", "St. Olavs Pir"),
