@@ -21,3 +21,20 @@ authors:
   - family-names: "Løve Frantzen"
     given-names: "Jonatan"
     alias: "JonatanLF"
+preferred-citation:
+  type: thesis
+  thesis-type: "Bachelor's Thesis"
+  title: "Meshtastic-GOATS: Bachelor's Thesis Code and Documentation"
+  institution:
+    name: "Norwegian University of Science and Technology (NTNU)"
+  year: 2026
+  url: "https://github.com/njaalsb/Bachelor_Meshtastic"
+  authors:
+    - family-names: "Sundnes Bruheim"
+      given-names: "Njål"
+    - family-names: "Lunde Fosen"
+      given-names: "Filip"
+    - family-names: "Verpe"
+      given-names: "Håkon"
+    - family-names: "Løve Frantzen"
+      given-names: "Jonatan"
