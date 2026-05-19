@@ -1,2 +1,0 @@
-import meshtastic.serial_interface
-help(meshtastic.serial_interface.SerialInterface.sendWaypoint)

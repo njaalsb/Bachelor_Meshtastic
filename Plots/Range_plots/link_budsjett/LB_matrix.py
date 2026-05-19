@@ -6,12 +6,12 @@ P_tx = 22  # dBm, same for all devices
 
 # (label, G_tx [dBi], P_sens [dBm], cable_loss [dB])
 devices = [
-    ("Sensecap",      1.0,   -138, 0.0),
+    ("Sensecap",      0.39,   -138, 0.0),
     ("T3S3 Mono_short",     2.5,   -136, 0.0),
     ("T3S3 Dipol",  -0.584, -136, 0.584),  # dipole cable loss each end
     ("Heltec",        3.0,   -136, 0.0),
     ("T-Deck",        2.5,   -136, 0.0),
-    ("Solar",         3.0,   -136, 0.0),
+    ("Repeater Mini",         2.5,   -136, 0.0),
 ]
 
 labels    = [d[0] for d in devices]

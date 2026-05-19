@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Meshtastic-GOATS: Bachelor's Thesis Code and Documentation"
+abstract: "Code and documentation for a bachelor's thesis on Meshtastic at the Norwegian University of Science and Technology (NTNU)."
+type: software
+license: "UNLICENSED"
+repository-code: "https://github.com/njaalsb/Bachelor_Meshtastic"
+date-released: "2026"
+institution:
+  name: "Norwegian University of Science and Technology (NTNU)"
+authors:
+  - family-names: "Sundnes Bruheim"
+    given-names: "Njål"
+    alias: "njaalsb"
+  - family-names: "Lunde Fosen"
+    given-names: "Filip"
+    alias: "Fosen1"
+  - family-names: "Verpe"
+    given-names: "Håkon"
+    alias: "Verpeh"
+  - family-names: "Løve Frantzen"
+    given-names: "Jonatan"
+    alias: "JonatanLF"
