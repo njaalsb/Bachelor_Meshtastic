@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "enabled": false,
+      "matchPackageNames": [
+        "!com.github.meshtastic{/,}**"
+      ]
+    },
+    {
+      "allowedVersions": "/^v\\d+\\.\\d+\\.\\d+$/",
+      "groupName": "Meshtastic Dependencies",
+      "matchPackageNames": [
+        "com.github.meshtastic{/,}**"
+      ]
+    }
+  ]
+}
